@@ -9,3 +9,4 @@ tests/e2e/test-results/
 reports/junit-*.xml
 .env
 .DS_Store
+permitpass.db
