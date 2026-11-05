@@ -1,0 +1,3 @@
+# ZAP baseline rule overrides: <rule id>	<IGNORE|WARN|FAIL>	<reason>
+# Every override needs a reason. Default: every passive rule FAILs the build.
+10035	IGNORE	(Strict-Transport-Security) CI scans plain http://localhost; HSTS is set by the TLS-terminating proxy in real environments
