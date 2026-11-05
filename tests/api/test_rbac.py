@@ -63,6 +63,6 @@ def test_citizen_cannot_pay_another_citizens_application(client):
     assert r.status_code == 404
 
 
-def test_missing_auth_headers_rejected(client):
+def test_missing_token_rejected(client):
     r = client.post("/applications", json=VALID_APPLICATION)
-    assert r.status_code == 422
+    assert r.status_code == 401

@@ -18,7 +18,7 @@ def test_created_application_is_stored(client):
     row = _stored(r.json()["id"])
     assert row is not None
     assert (row.business_name, row.kra_pin, row.owner_id) == (
-        VALID_APPLICATION["business_name"], VALID_APPLICATION["kra_pin"], CITIZEN["X-User-Id"],
+        VALID_APPLICATION["business_name"], VALID_APPLICATION["kra_pin"], "citizen-1",
     )
 
 
