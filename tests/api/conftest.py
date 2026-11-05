@@ -1,7 +1,8 @@
 """Shared fixtures for the API suite.
 
 Tests run in-process against the FastAPI app (fast, no network). Set
-PERMITPASS_BASE_URL to point the same tests at a running stack instead.
+DATABASE_URL to choose the database engine, or PERMITPASS_BASE_URL to point
+the same tests at a running stack instead.
 """
 import os
 import sys
@@ -11,6 +12,9 @@ import httpx
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "app" / "api"))
+
+# Fast, isolated default: a fresh in-memory SQLite database. CI also runs with DATABASE_URL pointing at PostgreSQL.
+os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///:memory:")
 
 from fastapi.testclient import TestClient  # noqa: E402
 

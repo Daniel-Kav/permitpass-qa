@@ -13,3 +13,4 @@ US-11,Web journeys work on Chromium / Firefox / WebKit and pass axe,,planned (we
 US-12,Portal meets load / stress / soak targets,perf/smoke.js (smoke only),partial
 US-13,Mobile app submits offline and syncs exactly once,,planned (week 5)
 US-14,Legacy records migrate with exact SQL reconciliation,,planned (week 4)
+US-15,Applications and state changes persist in the database (SQLite and PostgreSQL),test_persistence.py::test_created_application_is_stored; test_persistence.py::test_state_change_and_reason_are_stored; test_persistence.py::test_refused_transition_changes_nothing,covered

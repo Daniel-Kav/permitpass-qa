@@ -10,9 +10,10 @@ KRA PIN validation, M-Pesa payment, officer approval, signed certificates). The 
 
 ```bash
 pip install -r tests/api/requirements.txt
-make test-api        # 65 API tests, no Docker needed
+make test-api        # API tests on in-memory SQLite, no Docker needed
+DATABASE_URL=postgresql+psycopg://user:pass@localhost/db make test-api   # same suite on PostgreSQL
 
-make up              # full stack (Docker)
+make up              # API + PostgreSQL 16 (Docker)
 make test-e2e        # Playwright
 make perf-smoke      # k6 (needs k6 installed)
 ```
