@@ -2,16 +2,3 @@ services:
   api:
     build: ./app/api
     ports: ["8000:8000"]
-    environment:
-      MPESA_BASE_URL: http://mocks:8080/mpesa
-      KRA_BASE_URL: http://mocks:8080/kra
-    depends_on: [mocks]
-
-  mocks:
-    image: wiremock/wiremock:3.10.0
-    ports: ["8080:8080"]
-    volumes:
-      - ./mocks/mappings:/home/wiremock/mappings:ro
-      - ./mocks/__files:/home/wiremock/__files:ro
-
-  # db: postgres:16 arrives in week 1/2 when storage moves off memory
