@@ -9,7 +9,7 @@ US-07,KRA PIN and business name are validated,test_validation.py::test_invalid_k
 US-08,M-Pesa payment: success / cancel / timeout / duplicate / wrong amount,,planned (week 4)
 US-09,KRA PIN check over SOAP incl. faults and timeouts,,planned (week 4)
 US-10,Issued certificate verifies; tampered / revoked / expired fail,test_certificates.py::test_verification_decision_table; test_certificates.py::test_tampered_or_unknown_is_invalid_and_reveals_nothing; test_certificates.py::test_expiry_boundary; test_certificates.py::test_changing_stored_data_breaks_the_signature,covered
-US-11,Web journeys work on Chromium / Firefox / WebKit and pass axe,,planned (week 3)
+US-11,Web journeys work on Chromium / Firefox / WebKit / mobile Chrome,journeys.spec.ts (11 tests: full journey; reject; revoke; forged code; login and access control; KRA PIN error),covered
 US-12,Portal meets load / stress / soak targets,perf/smoke.js (smoke only),partial
 US-13,Mobile app submits offline and syncs exactly once,,planned (week 5)
 US-14,Legacy records migrate with exact SQL reconciliation,,planned (week 4)
@@ -19,3 +19,4 @@ US-17,Expired / forged / tampered / alg=none tokens and deactivated users are re
 US-18,Every create and transition is audited (actor / from / to / reason / time); refused actions leave no trace,test_audit.py::test_full_lifecycle_is_recorded_in_order; test_audit.py::test_refused_actions_write_no_event; test_audit.py::test_history_visibility,covered
 US-19,Applications can be listed with state filter and pagination; citizens see only their own,test_listing.py::test_citizen_sees_only_own_applications; test_listing.py::test_limit_boundaries; test_listing.py::test_pages_cover_everything_exactly_once,covered
 US-20,Officers can revoke an issued permit with a reason; revocation is audited and cannot be repeated,test_certificates.py::test_revocation_is_recorded_on_certificate_and_audit; test_certificates.py::test_cannot_revoke_twice; test_lifecycle.py::test_revoke_requires_reason,covered
+US-21,Every portal page has zero serious or critical WCAG 2.1 AA violations and works by keyboard,accessibility.spec.ts (6 tests incl. error and open-form states; keyboard-only login),covered
