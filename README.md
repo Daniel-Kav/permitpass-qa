@@ -27,6 +27,7 @@ make perf-smoke      # k6 (needs k6 installed)
 | State-transition testing (permit lifecycle) | `tests/api/test_lifecycle.py` | Done |
 | Role-based access + IDOR checks | `tests/api/test_rbac.py` | Done |
 | Authentication + token attacks (expired, forged, `alg: none`) | `tests/api/test_auth.py` | Done |
+| Audit trail, listing and pagination boundaries | `tests/api/test_audit.py`, `test_listing.py` | Done |
 | Equivalence partitioning / boundary values | `tests/api/test_validation.py` | Done |
 | Service virtualisation (M-Pesa REST, KRA SOAP) | `integrations-parked/` | Parked (later milestone) |
 | Contract tests | `tests/contract/` | Week 4 |
