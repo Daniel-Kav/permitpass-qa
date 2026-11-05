@@ -1,9 +1,15 @@
 """Request and response shapes."""
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
+
+from . import clock
 
 from .domain import Role, State
+
+# Every datetime leaves the API as UTC with an explicit offset (SQLite hands back naive values; see #13)
+UTCDateTime = Annotated[datetime, AfterValidator(clock.aware)]
 
 
 class User(BaseModel):
@@ -41,7 +47,7 @@ class Application(BaseModel):
     kra_pin: str
     state: State
     fee_kes: int
-    created_at: datetime
+    created_at: UTCDateTime
     rejection_reason: str | None = None
 
 
@@ -57,7 +63,7 @@ class AuditEvent(BaseModel):
     from_state: State | None
     to_state: State
     reason: str | None
-    at: datetime
+    at: UTCDateTime
 
 
 class ApplicationPage(BaseModel):
@@ -72,9 +78,9 @@ class Certificate(BaseModel):
 
     number: str
     business_name: str
-    issued_at: datetime
-    expires_at: datetime
+    issued_at: UTCDateTime
+    expires_at: UTCDateTime
     signature: str
-    revoked_at: datetime | None
+    revoked_at: UTCDateTime | None
     revoked_reason: str | None
     verify_url: str

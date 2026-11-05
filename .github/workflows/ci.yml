@@ -33,6 +33,8 @@ jobs:
           --health-cmd "pg_isready -U permitpass"
           --health-interval 2s --health-retries 20
     env:
+      # Deliberately non-UTC DB session time zone so time-zone bugs surface in CI (#13)
+      PGTZ: Africa/Nairobi
       DATABASE_URL: ${{ matrix.db == 'postgres' && 'postgresql+psycopg://permitpass:permitpass@localhost:5432/permitpass_test' || 'sqlite+pysqlite:///:memory:' }}
     steps:
       - uses: actions/checkout@v4
