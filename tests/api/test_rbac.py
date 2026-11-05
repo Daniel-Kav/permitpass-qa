@@ -15,12 +15,14 @@ MATRIX = {
     "approve": ("paid", {"officer"}),
     "reject": ("submitted", {"officer"}),
     "issue": ("approved", {"officer"}),
+    "revoke": ("issued", {"officer"}),
 }
 SETUP = {
     "draft": [],
     "submitted": [("submit", CITIZEN)],
     "paid": [("submit", CITIZEN), ("pay", CITIZEN)],
     "approved": [("submit", CITIZEN), ("pay", CITIZEN), ("approve", OFFICER)],
+    "issued": [("submit", CITIZEN), ("pay", CITIZEN), ("approve", OFFICER), ("issue", OFFICER)],
 }
 
 
@@ -36,7 +38,7 @@ def _prepare(client, state):
 def test_role_action_matrix(client, role, action):
     state, allowed = MATRIX[action]
     app_id = _prepare(client, state)
-    body = {"reason": "Test"} if action == "reject" else None
+    body = {"reason": "Test"} if action in ("reject", "revoke") else None
     r = client.post(f"/applications/{app_id}/{action}", json=body, headers=ROLES[role])
     if role in allowed:
         assert r.status_code == 200, r.text

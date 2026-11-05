@@ -45,3 +45,16 @@ class AuditEventRow(Base):
     to_state: Mapped[State] = mapped_column(Enum(State, name="application_state"))
     reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class CertificateRow(Base):
+    __tablename__ = "certificates"
+
+    number: Mapped[str] = mapped_column(String(20), primary_key=True)
+    application_id: Mapped[str] = mapped_column(ForeignKey("applications.id", ondelete="CASCADE"), unique=True)
+    business_name: Mapped[str] = mapped_column(String(120))
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    signature: Mapped[str] = mapped_column(String(64))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)

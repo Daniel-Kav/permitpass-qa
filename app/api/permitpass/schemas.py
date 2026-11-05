@@ -65,3 +65,16 @@ class ApplicationPage(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class Certificate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    number: str
+    business_name: str
+    issued_at: datetime
+    expires_at: datetime
+    signature: str
+    revoked_at: datetime | None
+    revoked_reason: str | None
+    verify_url: str

@@ -7,19 +7,20 @@ from __future__ import annotations
 
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from . import config
+from . import clock, config
+from .certificates import new_certificate
+from .certificates import router as certificates_router
 from .auth import current_user
 from .auth import router as auth_router
 from .db import SessionLocal, get_db, init_db, reset_db  # noqa: F401  (reset_db re-exported for tests)
-from .domain import ACTION_ROLES, PERMIT_FEE_KES, TRANSITIONS, Role, State
-from .models import ApplicationRow, AuditEventRow, UserRow
-from .schemas import ActionIn, Application, ApplicationIn, ApplicationPage, AuditEvent
+from .domain import ACTION_ROLES, PERMIT_FEE_KES, REASON_REQUIRED, TRANSITIONS, Role, State
+from .models import ApplicationRow, AuditEventRow, CertificateRow, UserRow
+from .schemas import ActionIn, Application, ApplicationIn, ApplicationPage, AuditEvent, Certificate
 
 
 @asynccontextmanager
@@ -35,6 +36,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="PermitPass API", version="0.2.0", lifespan=lifespan)
 app.include_router(auth_router)
+app.include_router(certificates_router)
 
 
 def _get_visible(db: Session, app_id: str, user: UserRow) -> ApplicationRow:
@@ -49,7 +51,7 @@ def _record(db: Session, row: ApplicationRow, actor: UserRow, action: str,
             from_state: State | None, reason: str | None = None) -> None:
     """Add an audit event in the same transaction as the change it describes."""
     db.add(AuditEventRow(application_id=row.id, actor_id=actor.id, action=action, from_state=from_state,
-                         to_state=row.state, reason=reason, at=datetime.now(timezone.utc)))
+                         to_state=row.state, reason=reason, at=clock.now()))
 
 
 @app.get("/health")
@@ -70,7 +72,7 @@ def create_application(
         kra_pin=body.kra_pin,
         state=State.draft,
         fee_kes=PERMIT_FEE_KES,
-        created_at=datetime.now(timezone.utc),
+        created_at=clock.now(),
     )
     db.add(row)
     db.flush()
@@ -120,13 +122,19 @@ def act(
     target = TRANSITIONS.get((row.state, action))
     if target is None:
         raise HTTPException(status.HTTP_409_CONFLICT, f"Cannot {action} an application in state '{row.state.value}'")
+    reason = body.reason if body else None
+    if action in REASON_REQUIRED and not reason:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"A reason is required to {action}")
     if action == "reject":
-        if not body or not body.reason:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "A rejection reason is required")
-        row.rejection_reason = body.reason
+        row.rejection_reason = reason
+    elif action == "issue":
+        db.add(new_certificate(row))
+    elif action == "revoke":
+        cert = _certificate_for(db, row.id)
+        cert.revoked_at, cert.revoked_reason = clock.now(), reason
     from_state = row.state
     row.state = target
-    _record(db, row, user, action, from_state, body.reason if body else None)
+    _record(db, row, user, action, from_state, reason)
     db.commit()
     return row
 
@@ -137,3 +145,20 @@ def history(app_id: str, user: UserRow = Depends(current_user), db: Session = De
     return db.scalars(
         select(AuditEventRow).where(AuditEventRow.application_id == app_id).order_by(AuditEventRow.id)
     ).all()
+
+
+def _certificate_for(db: Session, app_id: str) -> CertificateRow:
+    cert = db.scalar(select(CertificateRow).where(CertificateRow.application_id == app_id))
+    if cert is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No certificate for this application")
+    return cert
+
+
+@app.get("/applications/{app_id}/certificate", response_model=Certificate)
+def get_certificate(app_id: str, user: UserRow = Depends(current_user), db: Session = Depends(get_db)) -> Certificate:
+    _get_visible(db, app_id, user)
+    cert = _certificate_for(db, app_id)
+    return Certificate.model_validate(
+        {**{c: getattr(cert, c) for c in Certificate.model_fields if c != "verify_url"},
+         "verify_url": f"/verify/{cert.number}?sig={cert.signature}"}
+    )
