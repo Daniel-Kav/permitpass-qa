@@ -8,6 +8,7 @@ on:
 jobs:
   api-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -23,6 +24,7 @@ jobs:
 
   stack-smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: api-tests
     steps:
       - uses: actions/checkout@v4
@@ -31,9 +33,10 @@ jobs:
           docker compose up -d --build
           ./scripts/wait-for.sh http://localhost:8000/health 90
       - name: Playwright smoke
+        timeout-minutes: 10
         working-directory: tests/e2e
         run: |
-          npm install
+          npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
           npx playwright test --project=chromium
       - uses: grafana/setup-k6-action@v1

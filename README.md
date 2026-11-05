@@ -12,7 +12,7 @@ KRA PIN validation, M-Pesa payment, officer approval, signed certificates). The 
 pip install -r tests/api/requirements.txt
 make test-api        # 65 API tests, no Docker needed
 
-make up              # API + WireMock stubs (Docker)
+make up              # full stack (Docker)
 make test-e2e        # Playwright
 make perf-smoke      # k6 (needs k6 installed)
 ```
@@ -26,7 +26,7 @@ make perf-smoke      # k6 (needs k6 installed)
 | State-transition testing (permit lifecycle) | `tests/api/test_lifecycle.py` | Done |
 | Role-based access + IDOR checks | `tests/api/test_rbac.py` | Done |
 | Equivalence partitioning / boundary values | `tests/api/test_validation.py` | Done |
-| Service virtualisation (M-Pesa REST, KRA SOAP) | `mocks/mappings/` | Stubs ready |
+| Service virtualisation (M-Pesa REST, KRA SOAP) | `integrations-parked/` | Parked (later milestone) |
 | Contract tests | `tests/contract/` | Week 4 |
 | Web E2E, cross-browser, accessibility (axe) | `tests/e2e/` | Skeleton |
 | Mobile (Expo + Maestro, offline sync) | `app/mobile/`, `tests/mobile/` | Week 5 |
@@ -60,12 +60,15 @@ tests/api/         pytest: lifecycle, RBAC, validation
 tests/contract/    consumer/provider contracts
 tests/e2e/         Playwright + axe
 tests/mobile/      Maestro flows
-mocks/             WireMock stubs (M-Pesa, KRA)
+integrations-parked/ WireMock stubs, parked for a later milestone
 perf/              k6 scripts
 data-migration/    legacy → new schema + reconciliation SQL
 postman/           manual/exploratory API collection
 docs/              strategy, traceability, defects, UAT
 ```
+
+## Contributing
+See [CONTRIBUTING.md](CONTRIBUTING.md): issue → branch → PR → CI → merge.
 
 ## License
 MIT
