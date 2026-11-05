@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verify a permit · PermitPass</title>
+<link rel="stylesheet" href="/styles.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header>
+  <div class="bar">
+    <a class="logo" href="/">PermitPass</a>
+    <nav aria-label="Main">
+      <ul>
+        
+        <li><a href="/verify.html">Verify a permit</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+  <h1>Verify a permit</h1>
+  <section class="card narrow" aria-labelledby="v-h">
+    <h2 id="v-h">Check a certificate</h2>
+    <p class="muted">Enter the certificate number and the security code printed on the permit.</p>
+    <form id="verify" novalidate>
+      <label for="number">Certificate number</label>
+      <input id="number" name="number" required placeholder="PP-2026-XXXXXXXX" autocomplete="off">
+      <label for="sig">Security code</label>
+      <input id="sig" name="sig" required autocomplete="off">
+      <p><button type="submit">Verify</button></p>
+    </form>
+    <div id="result" role="status" aria-live="polite"></div>
+  </section>
+</main>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('verify'), out = document.getElementById('result');
+  const TEXT = {
+    valid: 'Valid permit',
+    revoked: 'This permit has been revoked',
+    expired: 'This permit has expired',
+    invalid: 'Not a valid PermitPass certificate',
+  };
+  async function check(number, sig) {
+    out.innerHTML = '';
+    try {
+      const r = await PP.api(`/verify/${encodeURIComponent(number)}?sig=${encodeURIComponent(sig)}`, { auth: false });
+      out.innerHTML = `<p class="result ${r.status}" data-status="${r.status}">${TEXT[r.status]}</p>` + (r.business_name
+        ? `<dl><dt>Business</dt><dd>${PP.esc(r.business_name)}</dd><dt>Valid until</dt><dd>${PP.fmtDate(r.expires_at)}</dd></dl>` : '');
+    } catch (ex) { out.innerHTML = `<p class="alert error">${PP.esc(ex.message)}</p>`; }
+  }
+  form.addEventListener('submit', (e) => { e.preventDefault(); check(form.number.value.trim(), form.sig.value.trim()); });
+  const q = new URLSearchParams(location.search);
+  if (q.get('n') && q.get('sig')) { form.number.value = q.get('n'); form.sig.value = q.get('sig'); check(q.get('n'), q.get('sig')); }
+});
+</script>
+</body>
+</html>

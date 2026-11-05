@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in · PermitPass</title>
+<link rel="stylesheet" href="/styles.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header>
+  <div class="bar">
+    <a class="logo" href="/">PermitPass</a>
+    <nav aria-label="Main">
+      <ul>
+        
+        <li><a href="/verify.html">Verify a permit</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+  <h1>Log in</h1>
+  <section class="card narrow" aria-labelledby="login-h">
+    <h2 id="login-h">Business permit portal</h2>
+    <form id="login" novalidate>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="username" required>
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <div id="login-error" role="alert" hidden></div>
+      <p><button type="submit">Log in</button></p>
+    </form>
+  </section>
+</main>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const role = PP.store.get(PP.ROLE);
+  if (PP.store.get(PP.TOKEN) && role) location.replace(PP.home(role));
+  const form = document.getElementById('login'), err = document.getElementById('login-error');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    err.hidden = true;
+    const btn = form.querySelector('button'); btn.disabled = true;
+    try {
+      const data = await PP.api('/auth/login', { method: 'POST', auth: false, body: { email: form.email.value, password: form.password.value } });
+      PP.store.set(PP.TOKEN, data.access_token); PP.store.set(PP.ROLE, data.role);
+      location.assign(PP.home(data.role));
+    } catch (ex) { PP.say(err, ex.message, 'error'); } finally { btn.disabled = false; }
+  });
+});
+</script>
+</body>
+</html>

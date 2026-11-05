@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble
+
 jobs:
   api-tests:
     name: api-tests (${{ matrix.db }})
@@ -44,42 +51,60 @@ jobs:
           name: api-test-results-${{ matrix.db }}
           path: reports/junit-api-${{ matrix.db }}.xml
 
-  stack-smoke:
+  e2e:
+    name: e2e (${{ matrix.browser }})
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     needs: api-tests
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: chromium
+            projects: --project=chromium --project=mobile-chrome
+          - browser: firefox
+            projects: --project=firefox
+          - browser: webkit
+            projects: --project=webkit
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start stack (API + PostgreSQL)
+        run: |
+          docker compose up -d --build
+          ./scripts/wait-for.sh http://localhost:8000/health 90
+      - name: Playwright in the official image (all browsers preinstalled)
+        timeout-minutes: 12
+        run: |
+          docker run --rm --network host --ipc=host -e CI=1 \
+            -v "$PWD/tests/e2e:/e2e" -w /e2e "$PLAYWRIGHT_IMAGE" \
+            bash -c "npm ci --no-audit --no-fund && npx playwright test ${{ matrix.projects }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: tests/e2e/playwright-report
+      - name: API logs on failure
+        if: failure()
+        run: docker compose logs api
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
+
+  perf-smoke:
+    runs-on: ubuntu-latest
+    needs: api-tests
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Start stack
         run: |
           docker compose up -d --build
           ./scripts/wait-for.sh http://localhost:8000/health 90
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('tests/e2e/package.json') }}
-      - name: Playwright smoke
-        timeout-minutes: 10
-        working-directory: tests/e2e
-        run: |
-          npm install --no-audit --no-fund
-          # Runner already has Chromium's system libraries; --with-deps only adds fonts from a slow apt mirror
-          npx playwright install chromium
-          npx playwright test --project=chromium
       - uses: grafana/setup-k6-action@v1
-      - name: k6 perf smoke
+      - name: k6 smoke (p95 < 300 ms, errors < 1%)
         uses: grafana/run-k6-action@v1
         with:
           path: perf/smoke.js
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: tests/e2e/playwright-report
       - name: Stop stack
         if: always()
         run: docker compose down -v

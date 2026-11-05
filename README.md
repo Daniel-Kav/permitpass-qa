@@ -6,6 +6,14 @@ KRA PIN validation, M-Pesa payment, officer approval, signed certificates). The 
 
 [![CI](https://github.com/Daniel-Kav/permitpass-qa/actions/workflows/ci.yml/badge.svg)](https://github.com/Daniel-Kav/permitpass-qa/actions/workflows/ci.yml)
 
+## The portal
+
+| Citizen | Officer |
+| --- | --- |
+| ![Citizen applications](docs/screenshots/citizen.png) | ![Officer queue with a rejection reason](docs/screenshots/officer.png) |
+| **Log in** | **Public verification** |
+| ![Login](docs/screenshots/login.png) | ![Verify a permit](docs/screenshots/verify.png) |
+
 ## Quick start
 
 ```bash
@@ -13,8 +21,8 @@ pip install -r tests/api/requirements.txt
 make test-api        # API tests on in-memory SQLite, no Docker needed
 DATABASE_URL=postgresql+psycopg://user:pass@localhost/db make test-api   # same suite on PostgreSQL
 
-make up              # API + PostgreSQL 16 (Docker)
-make test-e2e        # Playwright
+make up              # API + PostgreSQL 16 (Docker), portal at http://localhost:8000
+make test-e2e        # Playwright on Chromium, Firefox, WebKit and Pixel 7
 make perf-smoke      # k6 (needs k6 installed)
 ```
 
@@ -32,7 +40,7 @@ make perf-smoke      # k6 (needs k6 installed)
 | Equivalence partitioning / boundary values | `tests/api/test_validation.py` | Done |
 | Service virtualisation (M-Pesa REST, KRA SOAP) | `integrations-parked/` | Parked (later milestone) |
 | Contract tests | `tests/contract/` | Week 4 |
-| Web E2E, cross-browser, accessibility (axe) | `tests/e2e/` | Skeleton |
+| Web E2E (Page Object Model), cross-browser, accessibility (axe, WCAG 2.1 AA) | `tests/e2e/` | Done |
 | Mobile (Expo + Maestro, offline sync) | `app/mobile/`, `tests/mobile/` | Week 5 |
 | Performance (k6 smoke / load / stress / soak) | `perf/` | Smoke ready |
 | Security (OWASP ZAP baseline) | CI | Week 5 |
@@ -80,7 +88,8 @@ app/api/           FastAPI service under test
 app/mobile/        Expo app (week 5)
 tests/api/         pytest: lifecycle, RBAC, validation
 tests/contract/    consumer/provider contracts
-tests/e2e/         Playwright + axe
+tests/e2e/         Playwright + axe (pages/ = page objects, fixtures.ts = API data setup)
+app/api/permitpass/web/  portal pages (plain HTML/JS, served by FastAPI)
 tests/mobile/      Maestro flows
 integrations-parked/ WireMock stubs, parked for a later milestone
 perf/              k6 scripts

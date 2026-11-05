@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My applications · PermitPass</title>
+<link rel="stylesheet" href="/styles.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header>
+  <div class="bar">
+    <a class="logo" href="/">PermitPass</a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="/my.html" aria-current="page">My applications</a></li><li><button type="button" class="link" data-logout>Log out</button></li>
+        <li><a href="/verify.html">Verify a permit</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+  <h1>My applications</h1>
+  <div id="status" role="status" aria-live="polite" hidden></div>
+  <section class="card" aria-labelledby="new-h">
+    <h2 id="new-h">New permit application</h2>
+    <form id="new-app" novalidate>
+      <div class="row">
+        <div>
+          <label for="business_name">Business name</label>
+          <input id="business_name" name="business_name" required minlength="2" maxlength="120">
+        </div>
+        <div>
+          <label for="kra_pin">KRA PIN</label>
+          <input id="kra_pin" name="kra_pin" required aria-describedby="kra-hint" autocomplete="off">
+          <p id="kra-hint" class="hint">A or P, 9 digits, then a letter, e.g. A123456789Z</p>
+        </div>
+        <div class="btn-cell"><button type="submit">Create application</button></div>
+      </div>
+    </form>
+  </section>
+  <section aria-labelledby="list-h">
+    <h2 id="list-h">Your applications</h2>
+    <div class="table-wrap">
+      <table>
+        <caption>Permit fee is KES 2,500. Draft applications must be submitted, then paid.</caption>
+        <thead><tr><th scope="col">Business</th><th scope="col">KRA PIN</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col">Next step</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!PP.requireRole('citizen')) return;
+  const rows = document.getElementById('rows'), status = document.getElementById('status');
+
+  async function load() {
+    const page = await PP.api('/applications?limit=100');
+    if (!page.items.length) { rows.innerHTML = '<tr><td colspan="5" class="muted">No applications yet.</td></tr>'; return; }
+    const certs = await Promise.all(page.items.map((a) => a.state === 'issued' || a.state === 'revoked'
+      ? PP.api(`/applications/${a.id}/certificate`).catch(() => null) : null));
+    rows.innerHTML = page.items.map((a, i) => `
+      <tr data-id="${a.id}">
+        <th scope="row">${PP.esc(a.business_name)}</th>
+        <td>${PP.esc(a.kra_pin)}</td>
+        <td>${PP.fmtState(a.state)}</td>
+        <td>${PP.fmtDate(a.created_at)}</td>
+        <td>${next(a, certs[i])}</td>
+      </tr>`).join('');
+  }
+
+  function next(a, cert) {
+    const name = PP.esc(a.business_name);
+    if (a.state === 'draft') return `<button data-act="submit" aria-label="Submit ${name}">Submit</button>`;
+    if (a.state === 'submitted') return `<button data-act="pay" aria-label="Pay KES ${a.fee_kes} for ${name}">Pay KES ${a.fee_kes.toLocaleString()}</button>`;
+    if (a.state === 'paid') return '<span class="muted">Awaiting officer review</span>';
+    if (a.state === 'approved') return '<span class="muted">Approved, certificate being issued</span>';
+    if (a.state === 'rejected') return `<span>Rejected: ${PP.esc(a.rejection_reason)}</span>`;
+    if (cert) return `<a href="${PP.esc(cert.verify_url.replace('/verify/', '/verify.html?n=').replace('?sig=', '&sig='))}">Certificate ${PP.esc(cert.number)}</a>`;
+    return '';
+  }
+
+  rows.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act]'); if (!btn) return;
+    btn.disabled = true;
+    const id = btn.closest('tr').dataset.id, act = btn.dataset.act;
+    try {
+      const a = await PP.api(`/applications/${id}/${act}`, { method: 'POST' });
+      PP.say(status, act === 'pay' ? `Payment received for ${a.business_name}.` : `${a.business_name} submitted.`);
+      await load();
+    } catch (ex) { PP.say(status, ex.message, 'error'); btn.disabled = false; }
+  });
+
+  const form = document.getElementById('new-app');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const a = await PP.api('/applications', { method: 'POST', body: { business_name: form.business_name.value.trim(), kra_pin: form.kra_pin.value.trim().toUpperCase() } });
+      form.reset();
+      PP.say(status, `Application for ${a.business_name} created as a draft.`);
+      await load();
+    } catch (ex) { PP.say(status, ex.message, 'error'); }
+  });
+
+  load().catch((ex) => PP.say(status, ex.message, 'error'));
+});
+</script>
+</body>
+</html>

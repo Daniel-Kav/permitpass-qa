@@ -10,3 +10,4 @@ reports/junit-*.xml
 .env
 .DS_Store
 permitpass.db
+tests/e2e/node_modules/

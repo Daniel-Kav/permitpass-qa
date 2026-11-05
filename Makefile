@@ -12,8 +12,8 @@ test: test-api ## Run every automated suite available so far
 test-api:      ## API, RBAC, lifecycle and validation tests
 	python -m pytest -q
 
-test-e2e:      ## Playwright (needs `make up`)
-	cd tests/e2e && npx playwright test
+test-e2e:      ## Playwright, all browsers (needs `make up`)
+	cd tests/e2e && npm ci && npx playwright test
 
 perf-smoke:    ## 30-second k6 smoke (needs `make up` and k6)
 	k6 run perf/smoke.js
