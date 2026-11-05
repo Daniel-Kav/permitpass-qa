@@ -9,7 +9,8 @@ import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from . import config
@@ -17,8 +18,8 @@ from .auth import current_user
 from .auth import router as auth_router
 from .db import SessionLocal, get_db, init_db, reset_db  # noqa: F401  (reset_db re-exported for tests)
 from .domain import ACTION_ROLES, PERMIT_FEE_KES, TRANSITIONS, Role, State
-from .models import ApplicationRow, UserRow
-from .schemas import ActionIn, Application, ApplicationIn
+from .models import ApplicationRow, AuditEventRow, UserRow
+from .schemas import ActionIn, Application, ApplicationIn, ApplicationPage, AuditEvent
 
 
 @asynccontextmanager
@@ -44,6 +45,13 @@ def _get_visible(db: Session, app_id: str, user: UserRow) -> ApplicationRow:
     return row
 
 
+def _record(db: Session, row: ApplicationRow, actor: UserRow, action: str,
+            from_state: State | None, reason: str | None = None) -> None:
+    """Add an audit event in the same transaction as the change it describes."""
+    db.add(AuditEventRow(application_id=row.id, actor_id=actor.id, action=action, from_state=from_state,
+                         to_state=row.state, reason=reason, at=datetime.now(timezone.utc)))
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -65,8 +73,30 @@ def create_application(
         created_at=datetime.now(timezone.utc),
     )
     db.add(row)
+    db.flush()
+    _record(db, row, user, "create", None)
     db.commit()
     return row
+
+
+@app.get("/applications", response_model=ApplicationPage)
+def list_applications(
+    state: State | None = None,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    user: UserRow = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> ApplicationPage:
+    query = select(ApplicationRow)
+    if user.role == Role.citizen:
+        query = query.where(ApplicationRow.owner_id == user.id)
+    if state is not None:
+        query = query.where(ApplicationRow.state == state)
+    total = db.scalar(select(func.count()).select_from(query.subquery()))
+    rows = db.scalars(
+        query.order_by(ApplicationRow.created_at.desc(), ApplicationRow.id).limit(limit).offset(offset)
+    ).all()
+    return ApplicationPage(items=rows, total=total, limit=limit, offset=offset)
 
 
 @app.get("/applications/{app_id}", response_model=Application)
@@ -94,6 +124,16 @@ def act(
         if not body or not body.reason:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "A rejection reason is required")
         row.rejection_reason = body.reason
+    from_state = row.state
     row.state = target
+    _record(db, row, user, action, from_state, body.reason if body else None)
     db.commit()
     return row
+
+
+@app.get("/applications/{app_id}/history", response_model=list[AuditEvent])
+def history(app_id: str, user: UserRow = Depends(current_user), db: Session = Depends(get_db)) -> list[AuditEventRow]:
+    _get_visible(db, app_id, user)
+    return db.scalars(
+        select(AuditEventRow).where(AuditEventRow.application_id == app_id).order_by(AuditEventRow.id)
+    ).all()
