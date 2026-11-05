@@ -9,30 +9,34 @@ import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import Depends, FastAPI, Header, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from sqlalchemy.orm import Session
 
-from .db import get_db, init_db, reset_db  # noqa: F401  (reset_db re-exported for tests)
+from . import config
+from .auth import current_user
+from .auth import router as auth_router
+from .db import SessionLocal, get_db, init_db, reset_db  # noqa: F401  (reset_db re-exported for tests)
 from .domain import ACTION_ROLES, PERMIT_FEE_KES, TRANSITIONS, Role, State
-from .models import ApplicationRow
-from .schemas import ActionIn, Application, ApplicationIn, User
+from .models import ApplicationRow, UserRow
+from .schemas import ActionIn, Application, ApplicationIn
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
+    if config.SEED_DEMO_USERS:
+        from .seed import seed_users
+
+        with SessionLocal() as session:
+            seed_users(session)
     yield
 
 
 app = FastAPI(title="PermitPass API", version="0.2.0", lifespan=lifespan)
+app.include_router(auth_router)
 
 
-def current_user(x_user_id: str = Header(...), x_user_role: Role = Header(...)) -> User:
-    """Stand-in auth. Replaced by JWT in #3."""
-    return User(id=x_user_id, role=x_user_role)
-
-
-def _get_visible(db: Session, app_id: str, user: User) -> ApplicationRow:
+def _get_visible(db: Session, app_id: str, user: UserRow) -> ApplicationRow:
     row = db.get(ApplicationRow, app_id)
     # Citizens may only see their own applications; answer 404 rather than 403 so ids can't be probed (IDOR)
     if row is None or (user.role == Role.citizen and row.owner_id != user.id):
@@ -47,7 +51,7 @@ def health() -> dict[str, str]:
 
 @app.post("/applications", status_code=status.HTTP_201_CREATED, response_model=Application)
 def create_application(
-    body: ApplicationIn, user: User = Depends(current_user), db: Session = Depends(get_db)
+    body: ApplicationIn, user: UserRow = Depends(current_user), db: Session = Depends(get_db)
 ) -> ApplicationRow:
     if user.role != Role.citizen:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Only citizens can apply")
@@ -66,7 +70,7 @@ def create_application(
 
 
 @app.get("/applications/{app_id}", response_model=Application)
-def get_application(app_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)) -> ApplicationRow:
+def get_application(app_id: str, user: UserRow = Depends(current_user), db: Session = Depends(get_db)) -> ApplicationRow:
     return _get_visible(db, app_id, user)
 
 
@@ -75,7 +79,7 @@ def act(
     app_id: str,
     action: str,
     body: ActionIn | None = None,
-    user: User = Depends(current_user),
+    user: UserRow = Depends(current_user),
     db: Session = Depends(get_db),
 ) -> ApplicationRow:
     if action not in ACTION_ROLES:

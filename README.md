@@ -26,6 +26,7 @@ make perf-smoke      # k6 (needs k6 installed)
 | Requirements traceability | `docs/traceability.csv` | Live |
 | State-transition testing (permit lifecycle) | `tests/api/test_lifecycle.py` | Done |
 | Role-based access + IDOR checks | `tests/api/test_rbac.py` | Done |
+| Authentication + token attacks (expired, forged, `alg: none`) | `tests/api/test_auth.py` | Done |
 | Equivalence partitioning / boundary values | `tests/api/test_validation.py` | Done |
 | Service virtualisation (M-Pesa REST, KRA SOAP) | `integrations-parked/` | Parked (later milestone) |
 | Contract tests | `tests/contract/` | Week 4 |
@@ -38,6 +39,23 @@ make perf-smoke      # k6 (needs k6 installed)
 | UAT scripts and sign-off | `docs/uat/` | Week 6 |
 | CI/CD quality gates | `.github/workflows/ci.yml` | Live |
 | Bash automation | `scripts/`, `Makefile` | Live |
+
+## Demo users (local only)
+
+`make up` seeds these accounts (`SEED_DEMO_USERS=true`, never in a real environment). Password for all: `PermitPass!2026`.
+
+| Email | Role |
+| --- | --- |
+| citizen@permitpass.test | citizen |
+| citizen2@permitpass.test | citizen |
+| officer@permitpass.test | officer |
+| admin@permitpass.test | admin |
+
+```bash
+TOKEN=$(curl -s localhost:8000/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"citizen@permitpass.test","password":"PermitPass!2026"}' | jq -r .access_token)
+curl -s localhost:8000/auth/me -H "Authorization: Bearer $TOKEN"
+```
 
 ## Permit lifecycle
 
