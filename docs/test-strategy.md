@@ -1,6 +1,6 @@
 # PermitPass test strategy
 
-> Status: draft (week 1). Finalised in week 2.
+> Status: live, as of v0.2.0. Third-party integrations (M-Pesa, KRA) are parked until v0.3.0.
 
 ## Scope
 Permit lifecycle, payments (M-Pesa), KRA PIN validation (SOAP), signed certificates and QR verification,
@@ -23,6 +23,17 @@ Roughly 70% unit/API, 20% integration/contract, 10% E2E by test count.
 ## Techniques
 State-transition testing (lifecycle), decision tables (approval rules), equivalence partitioning
 and boundary values (KRA PIN, business name, fees, dates).
+
+## Defect handling
+Defects are raised with the issue template and get a severity from `docs/defects/severity.md`. They are fixed on a `fix/` branch,
+with the regression test committed first so the PR history shows red → green (example: #13 → #14).
+
+## What runs in CI
+| Job | What it proves |
+| --- | --- |
+| `api-tests (sqlite)`, `api-tests (postgres)` | Rules, roles, auth, audit, certificates, validation on both engines; PostgreSQL runs with a non-UTC session time zone |
+| `e2e (chromium / firefox / webkit)` | Browser journeys + axe accessibility against the real Compose stack |
+| `perf-smoke` | p95 < 300 ms and < 1% errors under 5 virtual users |
 
 ## Environments
 `local` (Docker Compose, seeded) · `ci` (same images, fresh state per job) · optional `staging` on AWS.

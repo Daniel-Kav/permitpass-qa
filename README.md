@@ -4,6 +4,9 @@ A hands-on QA portfolio built around **PermitPass**, a small permit-application 
 KRA PIN validation, M-Pesa payment, officer approval, signed certificates). The app is deliberately small; the
 **test system around it** is the point.
 
+**v0.2.0 at a glance:** 164 API tests (run on SQLite *and* PostgreSQL) · 17 browser tests × 4 browsers ·
+axe accessibility scans on every page · k6 performance gate · every change through issue → branch → PR → CI → merge.
+
 [![CI](https://github.com/Daniel-Kav/permitpass-qa/actions/workflows/ci.yml/badge.svg)](https://github.com/Daniel-Kav/permitpass-qa/actions/workflows/ci.yml)
 
 ## The portal
@@ -30,7 +33,7 @@ make perf-smoke      # k6 (needs k6 installed)
 
 | QA skill | Where it lives | Status |
 | --- | --- | --- |
-| Test strategy, risk-based planning | `docs/test-strategy.md` | Draft |
+| Test strategy, risk-based planning | `docs/test-strategy.md` | Live |
 | Requirements traceability | `docs/traceability.csv` | Live |
 | State-transition testing (permit lifecycle) | `tests/api/test_lifecycle.py` | Done |
 | Role-based access + IDOR checks | `tests/api/test_rbac.py` | Done |
@@ -39,15 +42,16 @@ make perf-smoke      # k6 (needs k6 installed)
 | Signed certificates: decision table, expiry boundary, tamper tests | `tests/api/test_certificates.py` | Done |
 | Equivalence partitioning / boundary values | `tests/api/test_validation.py` | Done |
 | Service virtualisation (M-Pesa REST, KRA SOAP) | `integrations-parked/` | Parked (later milestone) |
-| Contract tests | `tests/contract/` | Week 4 |
+| Contract tests | `tests/contract/` | v0.3.0 (with integrations) |
 | Web E2E (Page Object Model), cross-browser, accessibility (axe, WCAG 2.1 AA) | `tests/e2e/` | Done |
-| Mobile (Expo + Maestro, offline sync) | `app/mobile/`, `tests/mobile/` | Week 5 |
-| Performance (k6 smoke / load / stress / soak) | `perf/` | Smoke ready |
-| Security (OWASP ZAP baseline) | CI | Week 5 |
-| Data migration + SQL reconciliation | `data-migration/` | Week 4 |
-| Defect management | `.github/ISSUE_TEMPLATE/`, `docs/defects/` | Ready |
-| UAT scripts and sign-off | `docs/uat/` | Week 6 |
-| CI/CD quality gates | `.github/workflows/ci.yml` | Live |
+| Mobile (Expo + Maestro, offline sync) | `app/mobile/`, `tests/mobile/` | v0.3.0 |
+| Performance (k6 smoke / load / stress / soak) | `perf/` | Smoke gate in CI; load/stress/soak v0.3.0 |
+| Security: auth/token attacks, IDOR, tamper tests | `tests/api/` | Done |
+| Security (OWASP ZAP baseline) | CI | v0.3.0 |
+| Data migration + SQL reconciliation | `data-migration/` | v0.3.0 |
+| Defect management | `.github/ISSUE_TEMPLATE/`, `docs/defects/` | In use: see [#13](https://github.com/Daniel-Kav/permitpass-qa/issues/13) → [#14](https://github.com/Daniel-Kav/permitpass-qa/pull/14) |
+| UAT scripts and sign-off | `docs/uat/` | v0.3.0 |
+| CI/CD quality gates | `.github/workflows/ci.yml` | Live: API × 2 DBs, E2E × 3 browsers, perf |
 | Bash automation | `scripts/`, `Makefile` | Live |
 
 ## Demo users (local only)
@@ -96,6 +100,18 @@ perf/              k6 scripts
 data-migration/    legacy → new schema + reconciliation SQL
 postman/           manual/exploratory API collection
 docs/              strategy, traceability, defects, UAT
+```
+
+## How this repo is run
+
+Every change is an issue, a short-lived branch, a pull request with a testing checklist, and a merge once CI is green.
+Browse the [merged pull requests](https://github.com/Daniel-Kav/permitpass-qa/pulls?q=is%3Apr+is%3Amerged) and the
+[v0.2.0 milestone](https://github.com/Daniel-Kav/permitpass-qa/milestone/1?closed=1) to see the history.
+
+```
+main ─●────●─────────●──────────●───────────●──────────────●──────────●──── v0.2.0
+       \   / \       / \        / \         / \            / \        /
+        chore   persistence  jwt-auth   audit-and-listing  certificates  web-portal → fix/utc-timestamps
 ```
 
 ## Contributing
