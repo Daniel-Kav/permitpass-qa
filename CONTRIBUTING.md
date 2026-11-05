@@ -27,4 +27,5 @@ Raise with the **Defect** issue template; set severity using `docs/defects/sever
 ## Releasing
 1. Open a `chore/release-vX.Y.Z` PR that adds a `## [X.Y.Z] - date: Title` section to `CHANGELOG.md`.
 2. Merge it once CI is green, then tag `main`: `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`.
-3. The **Release** workflow publishes the GitHub release using that CHANGELOG section as the notes.
+   (Or publish a release for the new tag in the GitHub UI.)
+3. The **Release** workflow publishes (or updates) the GitHub release using that CHANGELOG section as the notes.

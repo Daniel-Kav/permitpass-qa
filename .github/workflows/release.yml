@@ -31,4 +31,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           title="$GITHUB_REF_NAME: $(grep -m1 "^## \[${GITHUB_REF_NAME#v}\]" CHANGELOG.md | sed 's/.*: //')"
-          gh release create "$GITHUB_REF_NAME" --title "$title" --notes-file notes.md --verify-tag
+          # Releases drafted in the GitHub UI create the tag themselves: update those instead of failing
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" --title "$title" --notes-file notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" --title "$title" --notes-file notes.md --verify-tag
+          fi
