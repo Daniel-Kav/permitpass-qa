@@ -8,7 +8,10 @@ from __future__ import annotations
 import uuid
 from contextlib import asynccontextmanager
 
+from pathlib import Path
+
 from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -162,3 +165,7 @@ def get_certificate(app_id: str, user: UserRow = Depends(current_user), db: Sess
         {**{c: getattr(cert, c) for c in Certificate.model_fields if c != "verify_url"},
          "verify_url": f"/verify/{cert.number}?sig={cert.signature}"}
     )
+
+
+# Web portal: mounted last so every API route above takes precedence
+app.mount("/", StaticFiles(directory=Path(__file__).parent / "web", html=True), name="web")
