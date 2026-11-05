@@ -1,0 +1,65 @@
+{
+  "info": {
+    "name": "PermitPass API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "appId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('200 OK', () => pm.response.to.have.status(200));"
+      ] } }]
+    },
+    {
+      "name": "Citizen creates application",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/applications",
+        "header": [
+          { "key": "X-User-Id", "value": "citizen-1" },
+          { "key": "X-User-Role", "value": "citizen" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"business_name\": \"Mama Mboga Ltd\", \"kra_pin\": \"A123456789Z\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('201 Created', () => pm.response.to.have.status(201));",
+        "pm.test('starts in draft', () => pm.expect(pm.response.json().state).to.eql('draft'));",
+        "pm.collectionVariables.set('appId', pm.response.json().id);"
+      ] } }]
+    },
+    {
+      "name": "Citizen submits",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/applications/{{appId}}/submit",
+        "header": [
+          { "key": "X-User-Id", "value": "citizen-1" },
+          { "key": "X-User-Role", "value": "citizen" }
+        ]
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('now submitted', () => pm.expect(pm.response.json().state).to.eql('submitted'));"
+      ] } }]
+    },
+    {
+      "name": "Officer tries to approve unpaid (expect 409)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/applications/{{appId}}/approve",
+        "header": [
+          { "key": "X-User-Id", "value": "officer-1" },
+          { "key": "X-User-Role", "value": "officer" }
+        ]
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('409 Conflict', () => pm.response.to.have.status(409));"
+      ] } }]
+    }
+  ]
+}

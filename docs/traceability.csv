@@ -1,0 +1,15 @@
+req_id,requirement,test_ids,status
+US-01,Citizen creates a permit application with valid details,test_validation.py::test_new_application_has_correct_fee_and_state,covered
+US-02,Application moves draft > submitted > paid > approved > issued,test_lifecycle.py::test_happy_path_reaches_issued,covered
+US-03,Illegal lifecycle transitions are refused,test_lifecycle.py::test_every_transition,covered
+US-04,Officer must give a reason to reject,test_lifecycle.py::test_reject_requires_reason,covered
+US-05,Only the right role can perform each action,test_rbac.py::test_role_action_matrix,covered
+US-06,Citizens cannot see or act on other citizens' applications,test_rbac.py::test_citizen_cannot_read_another_citizens_application; test_rbac.py::test_citizen_cannot_pay_another_citizens_application,covered
+US-07,KRA PIN and business name are validated,test_validation.py::test_invalid_kra_pins_rejected; test_validation.py::test_business_name_length_boundaries,covered
+US-08,M-Pesa payment: success / cancel / timeout / duplicate / wrong amount,,planned (week 4)
+US-09,KRA PIN check over SOAP incl. faults and timeouts,,planned (week 4)
+US-10,Issued certificate verifies; tampered / revoked / expired fail,,planned (week 3)
+US-11,Web journeys work on Chromium / Firefox / WebKit and pass axe,,planned (week 3)
+US-12,Portal meets load / stress / soak targets,perf/smoke.js (smoke only),partial
+US-13,Mobile app submits offline and syncs exactly once,,planned (week 5)
+US-14,Legacy records migrate with exact SQL reconciliation,,planned (week 4)

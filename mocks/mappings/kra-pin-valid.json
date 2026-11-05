@@ -1,0 +1,13 @@
+{
+  "priority": 2,
+  "request": {
+    "method": "POST",
+    "urlPath": "/kra/PinChecker",
+    "bodyPatterns": [{ "matchesXPath": "//*[local-name()='KRAPIN' and text()='A123456789Z']" }]
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "text/xml; charset=utf-8" },
+    "body": "<?xml version=\"1.0\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body><PinCheckResponse><KRAPIN>A123456789Z</KRAPIN><Status>Active</Status><TaxpayerName>MAMA MBOGA GROCERIES</TaxpayerName></PinCheckResponse></soap:Body></soap:Envelope>"
+  }
+}
