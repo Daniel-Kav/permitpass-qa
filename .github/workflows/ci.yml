@@ -36,6 +36,7 @@ jobs:
           npm install
           npx playwright install --with-deps chromium
           npx playwright test --project=chromium
+      - uses: grafana/setup-k6-action@v1
       - name: k6 perf smoke
         uses: grafana/run-k6-action@v1
         with:
