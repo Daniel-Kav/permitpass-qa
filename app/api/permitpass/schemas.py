@@ -47,3 +47,21 @@ class Application(BaseModel):
 
 class ActionIn(BaseModel):
     reason: str | None = Field(default=None, max_length=500)
+
+
+class AuditEvent(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    actor_id: str
+    action: str
+    from_state: State | None
+    to_state: State
+    reason: str | None
+    at: datetime
+
+
+class ApplicationPage(BaseModel):
+    items: list[Application]
+    total: int
+    limit: int
+    offset: int
