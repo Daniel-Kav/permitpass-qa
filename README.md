@@ -28,6 +28,7 @@ make perf-smoke      # k6 (needs k6 installed)
 | Role-based access + IDOR checks | `tests/api/test_rbac.py` | Done |
 | Authentication + token attacks (expired, forged, `alg: none`) | `tests/api/test_auth.py` | Done |
 | Audit trail, listing and pagination boundaries | `tests/api/test_audit.py`, `test_listing.py` | Done |
+| Signed certificates: decision table, expiry boundary, tamper tests | `tests/api/test_certificates.py` | Done |
 | Equivalence partitioning / boundary values | `tests/api/test_validation.py` | Done |
 | Service virtualisation (M-Pesa REST, KRA SOAP) | `integrations-parked/` | Parked (later milestone) |
 | Contract tests | `tests/contract/` | Week 4 |
@@ -61,15 +62,16 @@ curl -s localhost:8000/auth/me -H "Authorization: Bearer $TOKEN"
 ## Permit lifecycle
 
 ```
-draft --submit--> submitted --pay--> paid --approve--> approved --issue--> issued
-                      |                |
+draft --submit--> submitted --pay--> paid --approve--> approved --issue--> issued --revoke--> revoked
+                      |                |                                     (signed certificate)   (reason required)
                       +----reject------+---> rejected   (officer, reason required)
 ```
 
 | Action | Citizen | Officer | Admin |
 | --- | --- | --- | --- |
 | create / submit / pay | ✅ (own only) | ❌ | ❌ |
-| approve / reject / issue | ❌ | ✅ | ❌ |
+| approve / reject / issue / revoke | ❌ | ✅ | ❌ |
+| verify a certificate | public, no login | | |
 
 ## Layout
 

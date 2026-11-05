@@ -8,7 +8,7 @@ US-06,Citizens cannot see or act on other citizens' applications,test_rbac.py::t
 US-07,KRA PIN and business name are validated,test_validation.py::test_invalid_kra_pins_rejected; test_validation.py::test_business_name_length_boundaries,covered
 US-08,M-Pesa payment: success / cancel / timeout / duplicate / wrong amount,,planned (week 4)
 US-09,KRA PIN check over SOAP incl. faults and timeouts,,planned (week 4)
-US-10,Issued certificate verifies; tampered / revoked / expired fail,,planned (week 3)
+US-10,Issued certificate verifies; tampered / revoked / expired fail,test_certificates.py::test_verification_decision_table; test_certificates.py::test_tampered_or_unknown_is_invalid_and_reveals_nothing; test_certificates.py::test_expiry_boundary; test_certificates.py::test_changing_stored_data_breaks_the_signature,covered
 US-11,Web journeys work on Chromium / Firefox / WebKit and pass axe,,planned (week 3)
 US-12,Portal meets load / stress / soak targets,perf/smoke.js (smoke only),partial
 US-13,Mobile app submits offline and syncs exactly once,,planned (week 5)
@@ -18,3 +18,4 @@ US-16,Users log in with email and password and receive a JWT; failures reveal no
 US-17,Expired / forged / tampered / alg=none tokens and deactivated users are refused,test_auth.py::test_bad_tokens_are_rejected; test_auth.py::test_role_comes_from_database_not_token; test_auth.py::test_deactivated_user_cannot_log_in_or_use_old_token,covered
 US-18,Every create and transition is audited (actor / from / to / reason / time); refused actions leave no trace,test_audit.py::test_full_lifecycle_is_recorded_in_order; test_audit.py::test_refused_actions_write_no_event; test_audit.py::test_history_visibility,covered
 US-19,Applications can be listed with state filter and pagination; citizens see only their own,test_listing.py::test_citizen_sees_only_own_applications; test_listing.py::test_limit_boundaries; test_listing.py::test_pages_cover_everything_exactly_once,covered
+US-20,Officers can revoke an issued permit with a reason; revocation is audited and cannot be repeated,test_certificates.py::test_revocation_is_recorded_on_certificate_and_audit; test_certificates.py::test_cannot_revoke_twice; test_lifecycle.py::test_revoke_requires_reason,covered
