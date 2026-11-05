@@ -17,6 +17,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://permitpass:permitpass@db:5432/permitpass
       JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-0123456789}
+      CERT_SECRET: ${CERT_SECRET:-local-dev-cert-secret-0123456789}
       SEED_DEMO_USERS: "true"   # local dev only
     depends_on:
       db:
