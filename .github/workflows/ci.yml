@@ -54,12 +54,21 @@ jobs:
         run: |
           docker compose up -d --build
           ./scripts/wait-for.sh http://localhost:8000/health 90
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('tests/e2e/package.json') }}
       - name: Playwright smoke
         timeout-minutes: 10
         working-directory: tests/e2e
         run: |
           npm install --no-audit --no-fund
-          npx playwright install --with-deps chromium
+          # Runner already has Chromium's system libraries; --with-deps only adds fonts from a slow apt mirror
+          npx playwright install chromium
           npx playwright test --project=chromium
       - uses: grafana/setup-k6-action@v1
       - name: k6 perf smoke
