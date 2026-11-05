@@ -14,9 +14,17 @@ export const options = {
   },
 };
 
-const citizen = { headers: { 'Content-Type': 'application/json', 'X-User-Id': `citizen-${__VU}`, 'X-User-Role': 'citizen' } };
+// Log in once; every virtual user reuses the token (login itself is deliberately slow: PBKDF2)
+export function setup() {
+  const res = http.post(`${BASE}/auth/login`,
+    JSON.stringify({ email: 'citizen@permitpass.test', password: __ENV.DEMO_PASSWORD || 'PermitPass!2026' }),
+    { headers: { 'Content-Type': 'application/json' } });
+  check(res, { 'login ok': (r) => r.status === 200 });
+  return { token: res.json('access_token') };
+}
 
-export default function () {
+export default function (data) {
+  const citizen = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.token}` } };
   check(http.get(`${BASE}/health`), { 'health is 200': (r) => r.status === 200 });
   const res = http.post(`${BASE}/applications`, JSON.stringify({ business_name: 'Load Test Ltd', kra_pin: 'A123456789Z' }), citizen);
   check(res, { 'application created': (r) => r.status === 201 });

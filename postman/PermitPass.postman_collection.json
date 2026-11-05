@@ -4,16 +4,107 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8000" },
-    { "key": "appId", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "appId",
+      "value": ""
+    },
+    {
+      "key": "password",
+      "value": "PermitPass!2026"
+    },
+    {
+      "key": "citizenToken",
+      "value": ""
+    },
+    {
+      "key": "officerToken",
+      "value": ""
+    }
   ],
   "item": [
     {
       "name": "Health",
-      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
-      "event": [{ "listen": "test", "script": { "exec": [
-        "pm.test('200 OK', () => pm.response.to.have.status(200));"
-      ] } }]
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Log in as citizen",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/auth/login",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"citizen@permitpass.test\", \"password\": \"{{password}}\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('citizenToken', pm.response.json().access_token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Log in as officer",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/auth/login",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"officer@permitpass.test\", \"password\": \"{{password}}\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('officerToken', pm.response.json().access_token);"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "Citizen creates application",
@@ -21,45 +112,94 @@
         "method": "POST",
         "url": "{{baseUrl}}/applications",
         "header": [
-          { "key": "X-User-Id", "value": "citizen-1" },
-          { "key": "X-User-Role", "value": "citizen" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
-        "body": { "mode": "raw", "raw": "{\"business_name\": \"Mama Mboga Ltd\", \"kra_pin\": \"A123456789Z\"}" }
+        "body": {
+          "mode": "raw",
+          "raw": "{\"business_name\": \"Mama Mboga Ltd\", \"kra_pin\": \"A123456789Z\"}"
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{citizenToken}}",
+              "type": "string"
+            }
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "exec": [
-        "pm.test('201 Created', () => pm.response.to.have.status(201));",
-        "pm.test('starts in draft', () => pm.expect(pm.response.json().state).to.eql('draft'));",
-        "pm.collectionVariables.set('appId', pm.response.json().id);"
-      ] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "pm.test('starts in draft', () => pm.expect(pm.response.json().state).to.eql('draft'));",
+              "pm.collectionVariables.set('appId', pm.response.json().id);"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "Citizen submits",
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/applications/{{appId}}/submit",
-        "header": [
-          { "key": "X-User-Id", "value": "citizen-1" },
-          { "key": "X-User-Role", "value": "citizen" }
-        ]
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{citizenToken}}",
+              "type": "string"
+            }
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "exec": [
-        "pm.test('now submitted', () => pm.expect(pm.response.json().state).to.eql('submitted'));"
-      ] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('now submitted', () => pm.expect(pm.response.json().state).to.eql('submitted'));"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "Officer tries to approve unpaid (expect 409)",
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/applications/{{appId}}/approve",
-        "header": [
-          { "key": "X-User-Id", "value": "officer-1" },
-          { "key": "X-User-Role", "value": "officer" }
-        ]
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{officerToken}}",
+              "type": "string"
+            }
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "exec": [
-        "pm.test('409 Conflict', () => pm.response.to.have.status(409));"
-      ] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('409 Conflict', () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ]
     }
   ]
 }
