@@ -6,6 +6,7 @@
 <title>Log in · PermitPass</title>
 <link rel="stylesheet" href="/styles.css">
 <script src="/app.js" defer></script>
+<script src="/login.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -34,22 +35,5 @@
     </form>
   </section>
 </main>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const role = PP.store.get(PP.ROLE);
-  if (PP.store.get(PP.TOKEN) && role) location.replace(PP.home(role));
-  const form = document.getElementById('login'), err = document.getElementById('login-error');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    err.hidden = true;
-    const btn = form.querySelector('button'); btn.disabled = true;
-    try {
-      const data = await PP.api('/auth/login', { method: 'POST', auth: false, body: { email: form.email.value, password: form.password.value } });
-      PP.store.set(PP.TOKEN, data.access_token); PP.store.set(PP.ROLE, data.role);
-      location.assign(PP.home(data.role));
-    } catch (ex) { PP.say(err, ex.message, 'error'); } finally { btn.disabled = false; }
-  });
-});
-</script>
 </body>
 </html>
