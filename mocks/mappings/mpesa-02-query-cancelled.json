@@ -1,0 +1,70 @@
+{
+  "name": "M-Pesa: phone 254700000004 -> no callback; STK query will answer cancelled",
+  "priority": 2,
+  "request": {
+    "method": "POST",
+    "urlPath": "/mpesa/stkpush/v1/processrequest",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer wiremock-token"
+      },
+      "Content-Type": {
+        "contains": "application/json"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.BusinessShortCode"
+      },
+      {
+        "matchesJsonPath": "$.Password"
+      },
+      {
+        "matchesJsonPath": "$[?(@.Timestamp =~ /[0-9]{14}/)]"
+      },
+      {
+        "matchesJsonPath": "$[?(@.TransactionType == 'CustomerPayBillOnline')]"
+      },
+      {
+        "matchesJsonPath": "$.Amount"
+      },
+      {
+        "matchesJsonPath": "$.PartyA"
+      },
+      {
+        "matchesJsonPath": "$.PartyB"
+      },
+      {
+        "matchesJsonPath": "$.PhoneNumber"
+      },
+      {
+        "matchesJsonPath": "$.CallBackURL"
+      },
+      {
+        "matchesJsonPath": "$[?(@.AccountReference =~ /.{1,12}/)]"
+      },
+      {
+        "matchesJsonPath": "$.TransactionDesc"
+      },
+      {
+        "matchesJsonPath": "$[?(@.PhoneNumber == 254700000004)]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "MerchantRequestID": "wm-{{jsonPath request.body '$.AccountReference'}}",
+      "CheckoutRequestID": "ws_CO_QCX_{{jsonPath request.body '$.AccountReference'}}",
+      "ResponseCode": "0",
+      "ResponseDescription": "Success. Request accepted for processing",
+      "CustomerMessage": "Success. Request accepted for processing"
+    },
+    "transformers": [
+      "response-template"
+    ]
+  }
+}
