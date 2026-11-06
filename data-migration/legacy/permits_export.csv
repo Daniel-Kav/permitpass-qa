@@ -1,0 +1,26 @@
+legacy_id,business_name,kra_pin,owner_email,status,fee_paid,applied_on,issued_on
+L-1001,Mama Mboga Groceries,A123456789Z,citizen@permitpass.test,ISSUED,2500,2025-01-15,2025-02-01
+L-1002,  Kibanda   Coffee House ,a051234567k,CITIZEN@PERMITPASS.TEST,issued,"2,500",15/03/2025,02/04/2025
+L-1003,Rift Valley Hardware,P000000001A,citizen2@permitpass.test,Approved,2500.00,2025-06-10,
+L-1004,Lamu Dhow Tours,A123 456 789B,citizen2@permitpass.test,paid,2500,10-Jul-2025,
+L-1005,Nyeri Fresh Produce,P051234560C,newtrader@example.co.ke,APPLIED,,2025-09-01,
+L-1006,Kisumu Bike Repairs,A112233445D,newtrader@example.co.ke,Rejected,,2025-08-20,
+L-1007,Old Price Traders,A223344556E,citizen@permitpass.test,ISSUED,2000,2023-05-01,2023-05-20
+L-1008,Bad Pin Ltd,B123456789Z,citizen@permitpass.test,APPLIED,,2025-10-01,
+L-1009,Short Pin Ltd,A12345678Z,citizen@permitpass.test,APPLIED,,2025-10-02,
+L-1010,Mystery Status Co,A334455667F,citizen@permitpass.test,PENDING_REVIEW,,2025-10-03,
+L-1011,Unknown Date Co,A445566778G,citizen@permitpass.test,APPLIED,,sometime in 2025,
+L-1012,Future Date Co,A556677889H,citizen@permitpass.test,APPLIED,,2031-01-01,
+L-1013,Unpaid But Paid Status,A667788990J,citizen@permitpass.test,PAID,,2025-09-15,
+L-1014,Issued No Date,A778899001K,citizen@permitpass.test,ISSUED,2500,2025-04-01,
+L-1015,,A889900112L,citizen@permitpass.test,APPLIED,,2025-10-05,
+L-1016,Machakos Fruits,P112233446M,citizen2@permitpass.test,ISSUED,2500,2025-03-03,2025-03-20
+L-1016,Machakos Fruits,P112233446M,citizen2@permitpass.test,ISSUED,2500,2025-03-03,2025-03-20
+L-1017,Thika Tyres,A990011223N,citizen2@permitpass.test,APPROVED,2500,2025-07-07,
+L-1017,Thika Tyres Ltd,A990011223N,citizen2@permitpass.test,APPROVED,2500,2025-07-07,
+L-1018,Eldoret Dairy,P223344557P,eldoret.dairy@example.co.ke,PAID,2500,2025-08-08,
+L-1019,Negative Fee Co,A101010101Q,citizen@permitpass.test,PAID,-2500,2025-08-09,
+L-1020,No Owner Co,A202020202R,,APPLIED,,2025-10-06,
+,No Id Co,A303030303S,citizen@permitpass.test,APPLIED,,2025-10-07,
+L-1021,Garissa Camels,P404040404T,citizen@permitpass.test,applied,,2025-10-08,
+L-1022,Malindi Beach Hotel,A505050505U,eldoret.dairy@example.co.ke,ISSUED,2500,2024-11-01,2024-11-15

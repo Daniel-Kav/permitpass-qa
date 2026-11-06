@@ -48,7 +48,7 @@ make perf-smoke      # k6 (needs k6 installed)
 | Performance (k6 smoke / load / stress / soak) | `perf/` | Smoke gate in CI; load/stress/soak v0.3.0 |
 | Security: auth/token attacks, IDOR, tamper tests | `tests/api/` | Done |
 | Security (OWASP ZAP baseline) | CI | v0.3.0 |
-| Data migration + SQL reconciliation | `data-migration/` | v0.3.0 |
+| Data migration: cleansing rules, rejects, idempotency, SQL reconciliation | `data-migration/`, [`docs/data-migration.md`](docs/data-migration.md) | Done |
 | Defect management | `.github/ISSUE_TEMPLATE/`, `docs/defects/` | In use: see [#13](https://github.com/Daniel-Kav/permitpass-qa/issues/13) → [#14](https://github.com/Daniel-Kav/permitpass-qa/pull/14) |
 | UAT scripts and sign-off | `docs/uat/` | v0.3.0 |
 | CI/CD quality gates | `.github/workflows/ci.yml` | Live: API × 2 DBs, E2E × 3 browsers, perf |
@@ -98,7 +98,7 @@ app/api/permitpass/web/  portal pages (plain HTML/JS, served by FastAPI)
 tests/mobile/      Maestro flows
 mocks/             WireMock stubs + test-data rules (see mocks/README.md)
 perf/              k6 scripts
-data-migration/    legacy → new schema + reconciliation SQL
+data-migration/    legacy CSV fixture with known answers (importer + SQL in app/api/permitpass/migration/)
 postman/           manual/exploratory API collection
 docs/              strategy, traceability, defects, UAT
 ```
