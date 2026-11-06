@@ -45,7 +45,7 @@ make perf-smoke      # k6 (needs k6 installed)
 | Contract tests: real clients vs stubs, zero unmatched requests, fakes == stubs | `tests/contract/` | Done |
 | Web E2E (Page Object Model), cross-browser, accessibility (axe, WCAG 2.1 AA) | `tests/e2e/` | Done |
 | Mobile (Expo + Maestro, offline sync) | `app/mobile/`, `tests/mobile/` | v0.3.0 |
-| Performance (k6 smoke / load / stress / soak) | `perf/` | Smoke gate in CI; load/stress/soak v0.3.0 |
+| Performance: smoke gate, load / stress / soak with service levels | `perf/`, [`docs/perf/`](docs/perf/README.md) | Done: found #34 and #36 |
 | Security: auth/token attacks, IDOR, tamper tests | `tests/api/` | Done |
 | Security (OWASP ZAP baseline) | CI | v0.3.0 |
 | Data migration: cleansing rules, rejects, idempotency, SQL reconciliation | `data-migration/`, [`docs/data-migration.md`](docs/data-migration.md) | Done |

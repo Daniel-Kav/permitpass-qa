@@ -16,6 +16,7 @@ export const options = {
     checks: ['rate>0.99'],
     'http_req_duration{kind:read}': ['p(95)<300', 'p(99)<800'],
     'http_req_duration{kind:write}': ['p(95)<500'],
+    'http_req_duration{kind:public}': ['p(95)<200'],
   },
 };
 
