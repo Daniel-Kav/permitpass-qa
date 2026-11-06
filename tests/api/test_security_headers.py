@@ -60,3 +60,24 @@ def test_post_responses_are_not_cached(client):
     r = client.post("/applications", json=VALID_APPLICATION, headers=CITIZEN)
     assert r.status_code == 201
     assert r.headers["cache-control"] == "no-store"
+
+
+# ---------- CSRF: why ZAP rule 10202 is accepted (see .zap/rules.tsv) ----------
+
+def test_no_response_ever_sets_a_cookie(client):
+    """Auth is a bearer token sent by JavaScript, never a cookie, so a cross-site request carries no credentials."""
+    from conftest import EMAILS, PASSWORD
+    responses = [
+        client.post("/auth/login", json={"email": EMAILS["citizen-1"], "password": PASSWORD}),
+        client.post("/auth/login", json={"email": EMAILS["citizen-1"], "password": "wrong"}),
+        client.get("/"), client.get("/auth/me", headers=CITIZEN),
+        client.post("/applications", json=VALID_APPLICATION, headers=CITIZEN),
+    ]
+    assert all("set-cookie" not in r.headers for r in responses)
+
+
+@pytest.mark.parametrize("content_type", ["application/x-www-form-urlencoded", "multipart/form-data; boundary=x", "text/plain"])
+def test_login_refuses_cross_site_form_posts(client, content_type):
+    """A form on another site can only send these 'simple' content types. Login only accepts JSON."""
+    r = client.post("/auth/login", content=b"email=citizen%40permitpass.test&password=x", headers={"Content-Type": content_type})
+    assert r.status_code == 422
