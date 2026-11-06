@@ -1,0 +1,10 @@
+{
+  "name": "KRA: catch-all for requests that break the contract",
+  "priority": 100,
+  "request": { "method": "ANY", "urlPathPattern": "/kra/.*" },
+  "response": {
+    "status": 400,
+    "headers": { "Content-Type": "text/plain" },
+    "body": "CONTRACT VIOLATION: request did not match any KRA ValidatePIN stub (check SOAPAction, Content-Type and the ValidatePIN/KRAPIN element)"
+  }
+}

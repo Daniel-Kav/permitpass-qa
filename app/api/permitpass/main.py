@@ -20,6 +20,8 @@ from .certificates import new_certificate
 from .certificates import router as certificates_router
 from .auth import current_user
 from .auth import router as auth_router
+from .deps import get_kra_client
+from .integrations.kra import KraClient, KraUnavailable, PinStatus
 from .db import SessionLocal, get_db, init_db, reset_db  # noqa: F401  (reset_db re-exported for tests)
 from .domain import ACTION_ROLES, PERMIT_FEE_KES, REASON_REQUIRED, TRANSITIONS, Role, State
 from .models import ApplicationRow, AuditEventRow, CertificateRow, UserRow
@@ -66,10 +68,23 @@ def health() -> dict[str, str]:
 
 @app.post("/applications", status_code=status.HTTP_201_CREATED, response_model=Application)
 def create_application(
-    body: ApplicationIn, user: UserRow = Depends(current_user), db: Session = Depends(get_db)
+    body: ApplicationIn,
+    user: UserRow = Depends(current_user),
+    db: Session = Depends(get_db),
+    kra: KraClient = Depends(get_kra_client),
 ) -> ApplicationRow:
     if user.role != Role.citizen:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Only citizens can apply")
+    try:
+        check = kra.validate_pin(body.kra_pin)
+    except KraUnavailable:
+        # Fail closed: never store an application whose PIN we could not verify
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "KRA service unavailable, please try again later",
+                            headers={"Retry-After": "30"}) from None
+    if check.status is PinStatus.not_found:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "KRA PIN is not registered")
+    if check.status is PinStatus.inactive:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "KRA PIN is not active")
     row = ApplicationRow(
         id=str(uuid.uuid4()),
         owner_id=user.id,
@@ -81,7 +96,7 @@ def create_application(
     )
     db.add(row)
     db.flush()
-    _record(db, row, user, "create", None)
+    _record(db, row, user, "create", None, f"KRA PIN verified: {check.status.value}")
     db.commit()
     return row
 

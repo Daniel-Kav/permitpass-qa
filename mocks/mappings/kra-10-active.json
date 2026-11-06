@@ -1,0 +1,19 @@
+{
+  "name": "KRA: any other well-formed PIN is Active",
+  "priority": 10,
+  "request": {
+    "method": "POST",
+    "urlPath": "/kra/PinChecker",
+    "headers": {
+      "SOAPAction": { "equalTo": "urn:kra:pinchecker/ValidatePIN" },
+      "Content-Type": { "contains": "text/xml" }
+    },
+    "bodyPatterns": [{ "matchesXPath": "//*[local-name()='ValidatePIN']/*[local-name()='KRAPIN']" }]
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "text/xml; charset=utf-8" },
+    "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body><PinCheckResponse xmlns=\"urn:kra:pinchecker\"><KRAPIN>{{xPath request.body '//*[local-name()=\"KRAPIN\"]/text()'}}</KRAPIN><Status>Active</Status><TaxpayerName>REGISTERED TAXPAYER</TaxpayerName></PinCheckResponse></soap:Body></soap:Envelope>",
+    "transformers": ["response-template"]
+  }
+}

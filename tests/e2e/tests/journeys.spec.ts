@@ -138,6 +138,16 @@ test('invalid KRA PIN is explained to the citizen', async ({ page }) => {
   await expect(citizen.status()).toContainText('kra_pin');
 });
 
+test('a KRA PIN that is not registered is refused with a clear message', async ({ page }) => {
+  // A999999999Z is "NotFound" in the KRA stub (mocks/README.md)
+  await new LoginPage(page).loginAs('citizen');
+  const citizen = new CitizenPage(page);
+  const name = `Ghost Traders ${Date.now().toString(36)}`;
+  await citizen.create(name, 'A999999999Z');
+  await expect(citizen.status()).toHaveText('KRA PIN is not registered');
+  await expect(citizen.row(name)).toHaveCount(0);
+});
+
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 

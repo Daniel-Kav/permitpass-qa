@@ -17,3 +17,9 @@ ACCESS_TOKEN_MINUTES = int(os.getenv("ACCESS_TOKEN_MINUTES", "30"))
 PASSWORD_HASH_ITERATIONS = int(os.getenv("PASSWORD_HASH_ITERATIONS", "600000"))
 
 SEED_DEMO_USERS = os.getenv("SEED_DEMO_USERS", "false").lower() == "true"
+
+# External systems. INTEGRATIONS_MODE=fake uses in-process fakes (unit tests, offline dev);
+# otherwise the base URLs must point at the real services or the WireMock stubs in mocks/.
+INTEGRATIONS_MODE = os.getenv("INTEGRATIONS_MODE", "real")
+KRA_BASE_URL = os.getenv("KRA_BASE_URL", "")
+KRA_TIMEOUT_SECONDS = float(os.getenv("KRA_TIMEOUT_SECONDS", "3"))

@@ -24,7 +24,7 @@ pip install -r tests/api/requirements.txt
 make test-api        # API tests on in-memory SQLite, no Docker needed
 DATABASE_URL=postgresql+psycopg://user:pass@localhost/db make test-api   # same suite on PostgreSQL
 
-make up              # API + PostgreSQL 16 (Docker), portal at http://localhost:8000
+make up              # API + PostgreSQL 16 + WireMock (Docker), portal at http://localhost:8000
 make test-e2e        # Playwright on Chromium, Firefox, WebKit and Pixel 7
 make perf-smoke      # k6 (needs k6 installed)
 ```
@@ -41,8 +41,8 @@ make perf-smoke      # k6 (needs k6 installed)
 | Audit trail, listing and pagination boundaries | `tests/api/test_audit.py`, `test_listing.py` | Done |
 | Signed certificates: decision table, expiry boundary, tamper tests | `tests/api/test_certificates.py` | Done |
 | Equivalence partitioning / boundary values | `tests/api/test_validation.py` | Done |
-| Service virtualisation (M-Pesa REST, KRA SOAP) | `integrations-parked/` | Parked (later milestone) |
-| Contract tests | `tests/contract/` | v0.3.0 (with integrations) |
+| Service virtualisation: KRA SOAP (M-Pesa next) | `mocks/` | KRA done |
+| Contract tests: real clients vs stubs, zero unmatched requests | `tests/contract/` | KRA done |
 | Web E2E (Page Object Model), cross-browser, accessibility (axe, WCAG 2.1 AA) | `tests/e2e/` | Done |
 | Mobile (Expo + Maestro, offline sync) | `app/mobile/`, `tests/mobile/` | v0.3.0 |
 | Performance (k6 smoke / load / stress / soak) | `perf/` | Smoke gate in CI; load/stress/soak v0.3.0 |
@@ -95,7 +95,7 @@ tests/contract/    consumer/provider contracts
 tests/e2e/         Playwright + axe (pages/ = page objects, fixtures.ts = API data setup)
 app/api/permitpass/web/  portal pages (plain HTML/JS, served by FastAPI)
 tests/mobile/      Maestro flows
-integrations-parked/ WireMock stubs, parked for a later milestone
+mocks/             WireMock stubs + test-data rules (see mocks/README.md)
 perf/              k6 scripts
 data-migration/    legacy → new schema + reconciliation SQL
 postman/           manual/exploratory API collection

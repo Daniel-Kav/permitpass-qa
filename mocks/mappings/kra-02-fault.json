@@ -1,0 +1,18 @@
+{
+  "name": "KRA: PINs with digits 888888888 get a SOAP fault",
+  "priority": 2,
+  "request": {
+    "method": "POST",
+    "urlPath": "/kra/PinChecker",
+    "headers": {
+      "SOAPAction": { "equalTo": "urn:kra:pinchecker/ValidatePIN" },
+      "Content-Type": { "contains": "text/xml" }
+    },
+    "bodyPatterns": [{ "matchesXPath": "//*[local-name()='ValidatePIN']/*[local-name()='KRAPIN'][contains(text(),'888888888')]" }]
+  },
+  "response": {
+    "status": 500,
+    "headers": { "Content-Type": "text/xml; charset=utf-8" },
+    "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body><soap:Fault><faultcode>soap:Server</faultcode><faultstring>Service temporarily unavailable</faultstring></soap:Fault></soap:Body></soap:Envelope>"
+  }
+}
