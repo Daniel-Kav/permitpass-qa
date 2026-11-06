@@ -69,11 +69,14 @@ jobs:
       - run: pip install -r tests/api/requirements.txt
       - name: Start WireMock with the repo's stubs
         run: |
-          docker run -d --name wiremock -p 8089:8080 -v "$PWD/mocks:/home/wiremock:ro" wiremock/wiremock:3.10.0 --disable-banner
+          # host-gateway lets WireMock's webhooks reach the test process's callback receiver
+          docker run -d --name wiremock -p 8089:8080 --add-host=host.docker.internal:host-gateway \
+            -v "$PWD/mocks:/home/wiremock:ro" wiremock/wiremock:3.10.0 --disable-banner
           ./scripts/wait-for.sh http://localhost:8089/__admin/mappings 60
       - name: Real clients against the stubs
         env:
           WIREMOCK_URL: http://localhost:8089
+          CALLBACK_HOST: host.docker.internal
         run: python -m pytest -q tests/contract --junitxml=reports/junit-contract.xml
       - name: WireMock log on failure
         if: failure()

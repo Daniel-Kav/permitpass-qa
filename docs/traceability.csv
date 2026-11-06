@@ -6,7 +6,7 @@ US-04,Officer must give a reason to reject,test_lifecycle.py::test_reject_requir
 US-05,Only the right role can perform each action,test_rbac.py::test_role_action_matrix,covered
 US-06,Citizens cannot see or act on other citizens' applications,test_rbac.py::test_citizen_cannot_read_another_citizens_application; test_rbac.py::test_citizen_cannot_pay_another_citizens_application,covered
 US-07,KRA PIN and business name are validated,test_validation.py::test_invalid_kra_pins_rejected; test_validation.py::test_business_name_length_boundaries,covered
-US-08,M-Pesa payment: success / cancel / timeout / duplicate / wrong amount,,parked (third-party; later milestone)
+US-08,M-Pesa STK payment: success / cancel / timeout / duplicate / wrong amount / unknown / bad token; fail closed,test_payments.py (incl. decision table); test_mpesa_client.py; tests/contract/test_mpesa_contract.py (real client + webhooks); journeys.spec.ts (pay / cancel and retry / invalid number),covered
 US-09,KRA PIN check over SOAP incl. faults and timeouts; fail closed,test_kra.py (API behaviour); test_kra_client.py (parsing / failures / XXE); tests/contract/test_kra_contract.py (real client vs WireMock); journeys.spec.ts › KRA PIN not registered,covered
 US-10,Issued certificate verifies; tampered / revoked / expired fail,test_certificates.py::test_verification_decision_table; test_certificates.py::test_tampered_or_unknown_is_invalid_and_reveals_nothing; test_certificates.py::test_expiry_boundary; test_certificates.py::test_changing_stored_data_breaks_the_signature,covered
 US-11,Web journeys work on Chromium / Firefox / WebKit / mobile Chrome,journeys.spec.ts (11 tests: full journey; reject; revoke; forged code; login and access control; KRA PIN error),covered

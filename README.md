@@ -41,8 +41,8 @@ make perf-smoke      # k6 (needs k6 installed)
 | Audit trail, listing and pagination boundaries | `tests/api/test_audit.py`, `test_listing.py` | Done |
 | Signed certificates: decision table, expiry boundary, tamper tests | `tests/api/test_certificates.py` | Done |
 | Equivalence partitioning / boundary values | `tests/api/test_validation.py` | Done |
-| Service virtualisation: KRA SOAP (M-Pesa next) | `mocks/` | KRA done |
-| Contract tests: real clients vs stubs, zero unmatched requests | `tests/contract/` | KRA done |
+| Service virtualisation: KRA SOAP, M-Pesa Daraja with callback webhooks | `mocks/` | Done |
+| Contract tests: real clients vs stubs, zero unmatched requests, fakes == stubs | `tests/contract/` | Done |
 | Web E2E (Page Object Model), cross-browser, accessibility (axe, WCAG 2.1 AA) | `tests/e2e/` | Done |
 | Mobile (Expo + Maestro, offline sync) | `app/mobile/`, `tests/mobile/` | v0.3.0 |
 | Performance (k6 smoke / load / stress / soak) | `perf/` | Smoke gate in CI; load/stress/soak v0.3.0 |
@@ -74,9 +74,10 @@ curl -s localhost:8000/auth/me -H "Authorization: Bearer $TOKEN"
 ## Permit lifecycle
 
 ```
-draft --submit--> submitted --pay--> paid --approve--> approved --issue--> issued --revoke--> revoked
-                      |                |                                     (signed certificate)   (reason required)
-                      +----reject------+---> rejected   (officer, reason required)
+draft --submit--> submitted --pay--> payment_pending --(M-Pesa callback)--> paid --approve--> approved --issue--> issued --revoke--> revoked
+                      |  ^                    |
+                      |  +--- cancelled / failed / wrong amount
+                      +----reject (from submitted or paid) ---> rejected   (officer, reason required)
 ```
 
 | Action | Citizen | Officer | Admin |
