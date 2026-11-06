@@ -11,7 +11,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.exc import TimeoutError as SQLAlchemyTimeoutError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -29,18 +31,17 @@ from .integrations.kra import KraClient, KraUnavailable, PinStatus
 from .db import SessionLocal, get_db, init_db, reset_db  # noqa: F401  (reset_db re-exported for tests)
 from .domain import ACTION_ROLES, PERMIT_FEE_KES, REASON_REQUIRED, TRANSITIONS, Role, State
 from .models import ApplicationRow, AuditEventRow, CertificateRow, PaymentRow, UserRow
+from .load_shedding import LoadSheddingMiddleware
 from .security_headers import SecurityHeadersMiddleware
 from .schemas import ActionIn, Application, ApplicationIn, ApplicationPage, AuditEvent, Certificate, Payment
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    init_db()
-    if config.SEED_DEMO_USERS:
-        from .seed import seed_users
+    if config.INIT_DB_ON_STARTUP:   # dev and tests; in Docker the prestart step does this once (#36)
+        from .prestart import main as prestart
 
-        with SessionLocal() as session:
-            seed_users(session)
+        prestart()
     sweeper = None
     if config.PAYMENT_SWEEP_INTERVAL_SECONDS > 0:
         sweeper = BackgroundSweeper(config.PAYMENT_SWEEP_INTERVAL_SECONDS)
@@ -50,8 +51,17 @@ async def lifespan(_: FastAPI):
         sweeper.stop()
 
 
-app = FastAPI(title="PermitPass API", version="0.2.0", lifespan=lifespan)
-app.add_middleware(SecurityHeadersMiddleware)
+app = FastAPI(title="PermitPass API", version="0.4.0", lifespan=lifespan)
+
+
+@app.exception_handler(SQLAlchemyTimeoutError)
+async def db_pool_exhausted(_request, _exc):
+    """Every DB connection busy for DB_POOL_TIMEOUT_SECONDS: tell the client to retry, quickly (#36)."""
+    return JSONResponse({"detail": "Server busy, please retry shortly"}, status_code=503, headers={"Retry-After": "2"})
+
+if config.MAX_IN_FLIGHT > 0:
+    app.add_middleware(LoadSheddingMiddleware, max_in_flight=config.MAX_IN_FLIGHT)   # sheds before any real work
+app.add_middleware(SecurityHeadersMiddleware)   # added last = outermost, so even a shed 503 carries the headers
 app.include_router(auth_router)
 app.include_router(certificates_router)
 app.include_router(payments_router)
