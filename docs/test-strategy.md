@@ -33,12 +33,15 @@ with the regression test committed first so the PR history shows red → green (
 | --- | --- |
 | `api-tests (sqlite)`, `api-tests (postgres)` | Rules, roles, auth, audit, certificates, validation on both engines; PostgreSQL runs with a non-UTC session time zone |
 | `e2e (chromium / firefox / webkit)` | Browser journeys + axe accessibility against the real Compose stack |
+| `contract-tests (WireMock)` | Real KRA and M-Pesa clients match the stubs; no request breaks the contract; unit-test fakes behave like the stubs |
+| `security (ZAP baseline)` | No passive OWASP ZAP finding (strict; ignores justified in `.zap/rules.tsv`) |
 | `perf-smoke` | p95 < 300 ms and < 1% errors under 5 virtual users |
+| **Performance** workflow | load (nightly), stress and soak (manual) against the service levels in `docs/perf/README.md` |
 
 ## Integrations
-External systems are virtualised with WireMock (). Unit tests use in-process fakes that follow the same
+External systems are virtualised with WireMock (`mocks/`). Unit tests use in-process fakes that follow the same
 test-data rules; a contract test fails if a fake and its stub ever disagree. KRA and M-Pesa failures **fail closed**:
-nothing is stored, and the user gets a clear 503 with .
+nothing is stored, and the user gets a clear 503 with `Retry-After`.
 
 ## Environments
 `local` (Docker Compose, seeded) · `ci` (same images, fresh state per job) · optional `staging` on AWS.
