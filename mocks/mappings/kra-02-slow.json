@@ -1,0 +1,20 @@
+{
+  "name": "KRA: PINs with digits 777777777 answer after 5 s (longer than our 3 s timeout)",
+  "priority": 2,
+  "request": {
+    "method": "POST",
+    "urlPath": "/kra/PinChecker",
+    "headers": {
+      "SOAPAction": { "equalTo": "urn:kra:pinchecker/ValidatePIN" },
+      "Content-Type": { "contains": "text/xml" }
+    },
+    "bodyPatterns": [{ "matchesXPath": "//*[local-name()='ValidatePIN']/*[local-name()='KRAPIN'][contains(text(),'777777777')]" }]
+  },
+  "response": {
+    "status": 200,
+    "fixedDelayMilliseconds": 5000,
+    "headers": { "Content-Type": "text/xml; charset=utf-8" },
+    "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body><PinCheckResponse xmlns=\"urn:kra:pinchecker\"><KRAPIN>{{xPath request.body '//*[local-name()=\"KRAPIN\"]/text()'}}</KRAPIN><Status>Active</Status><TaxpayerName>SLOW BUT ACTIVE</TaxpayerName></PinCheckResponse></soap:Body></soap:Envelope>",
+    "transformers": ["response-template"]
+  }
+}
