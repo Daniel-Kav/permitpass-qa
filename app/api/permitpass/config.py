@@ -34,3 +34,7 @@ MPESA_CALLBACK_TOKEN = os.getenv("MPESA_CALLBACK_TOKEN", "dev-callback-token-012
 MPESA_CALLBACK_URL = os.getenv(
     "MPESA_CALLBACK_URL", f"http://localhost:8000/payments/mpesa/callback?token={MPESA_CALLBACK_TOKEN}"
 )
+# Payments that get no callback (#30): query M-Pesa after this long, give up after that long
+PAYMENT_QUERY_AFTER_SECONDS = int(os.getenv("PAYMENT_QUERY_AFTER_SECONDS", "120"))
+PAYMENT_EXPIRE_AFTER_SECONDS = int(os.getenv("PAYMENT_EXPIRE_AFTER_SECONDS", "600"))
+PAYMENT_SWEEP_INTERVAL_SECONDS = int(os.getenv("PAYMENT_SWEEP_INTERVAL_SECONDS", "30"))   # 0 disables the background sweep

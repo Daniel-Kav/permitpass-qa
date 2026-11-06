@@ -24,7 +24,8 @@ TRANSITIONS: dict[tuple[State, str], State] = {
     (State.draft, "submit"): State.submitted,
     (State.submitted, "pay"): State.payment_pending,          # STK push sent; waiting for M-Pesa
     (State.payment_pending, "payment_confirmed"): State.paid,  # system: M-Pesa callback, success
-    (State.payment_pending, "payment_failed"): State.submitted,  # system: cancelled, failed or wrong amount
+    (State.payment_pending, "payment_failed"): State.submitted,  # system: cancelled, failed, wrong amount or expired
+    (State.submitted, "payment_confirmed"): State.paid,          # system: a success that arrives after expiry (#30)
     (State.paid, "approve"): State.approved,
     (State.submitted, "reject"): State.rejected,
     (State.paid, "reject"): State.rejected,
@@ -43,7 +44,7 @@ ACTION_ROLES: dict[str, set[Role]] = {
 }
 
 # Transitions only the system may perform (from the M-Pesa callback), never via the API's action endpoint
-SYSTEM_ACTIONS = {"payment_confirmed", "payment_failed"}
+SYSTEM_ACTIONS = {"payment_confirmed", "payment_failed", "payment_refund_due"}
 SYSTEM_ACTOR_MPESA = "system:mpesa"
 SYSTEM_ACTOR_MIGRATION = "system:migration"
 
