@@ -77,3 +77,40 @@ def test_timeout_becomes_mpesa_unavailable():
 @pytest.mark.parametrize("phone,expected", [("0712345678", "254712345678"), ("+254112345678", "254112345678"), ("254712345678", "254712345678")])
 def test_normalise_phone(phone, expected):
     assert normalise_phone(phone) == expected
+
+
+# ---------- STK Push Query (#30) ----------
+
+def query_client(response, seen=None):
+    return make(stk=lambda req: (seen.append(req) if seen is not None else None) or response)
+
+
+def test_query_payload():
+    seen = []
+    query_client(httpx.Response(200, json={"ResponseCode": "0", "ResultCode": "0", "ResultDesc": "ok"}), seen).stk_query("ws_CO_1")
+    req = seen[-1]
+    body = httpx.Response(200, content=req.content).json()
+    assert req.url.path == "/mpesa/stkpushquery/v1/query"
+    assert set(body) == {"BusinessShortCode", "Password", "Timestamp", "CheckoutRequestID"}
+    assert body["CheckoutRequestID"] == "ws_CO_1"
+
+
+@pytest.mark.parametrize("response,expected", [
+    (httpx.Response(200, json={"ResponseCode": "0", "ResultCode": "0", "ResultDesc": "ok"}), (False, 0)),
+    (httpx.Response(200, json={"ResponseCode": "0", "ResultCode": "1032", "ResultDesc": "cancelled"}), (False, 1032)),
+    (httpx.Response(500, json={"errorCode": "500.001.1001", "errorMessage": "The transaction is being processed"}), (True, None)),
+])
+def test_query_answers(response, expected):
+    r = query_client(response).stk_query("ws_CO_1")
+    assert (r.processing, r.result_code) == expected
+
+
+@pytest.mark.parametrize("response", [
+    httpx.Response(500, json={"errorCode": "500.001.1001X"}),
+    httpx.Response(503, json={}),
+    httpx.Response(200, json={"ResponseCode": "0"}),
+    httpx.Response(200, text="<html>"),
+], ids=["other error code", "503", "missing ResultCode", "not json"])
+def test_query_failures(response):
+    with pytest.raises(MpesaUnavailable):
+        query_client(response).stk_query("ws_CO_1")
