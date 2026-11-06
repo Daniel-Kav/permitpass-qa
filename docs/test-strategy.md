@@ -1,6 +1,6 @@
 # PermitPass test strategy
 
-> Status: live, as of v0.2.0. Third-party integrations (M-Pesa, KRA) are parked until v0.3.0.
+> Status: live, as of v0.3.0.
 
 ## Scope
 Permit lifecycle, payments (M-Pesa), KRA PIN validation (SOAP), signed certificates and QR verification,
@@ -34,6 +34,11 @@ with the regression test committed first so the PR history shows red → green (
 | `api-tests (sqlite)`, `api-tests (postgres)` | Rules, roles, auth, audit, certificates, validation on both engines; PostgreSQL runs with a non-UTC session time zone |
 | `e2e (chromium / firefox / webkit)` | Browser journeys + axe accessibility against the real Compose stack |
 | `perf-smoke` | p95 < 300 ms and < 1% errors under 5 virtual users |
+
+## Integrations
+External systems are virtualised with WireMock (). Unit tests use in-process fakes that follow the same
+test-data rules; a contract test fails if a fake and its stub ever disagree. KRA and M-Pesa failures **fail closed**:
+nothing is stored, and the user gets a clear 503 with .
 
 ## Environments
 `local` (Docker Compose, seeded) · `ci` (same images, fresh state per job) · optional `staging` on AWS.

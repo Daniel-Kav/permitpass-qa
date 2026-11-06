@@ -4,8 +4,9 @@ A hands-on QA portfolio built around **PermitPass**, a small permit-application 
 KRA PIN validation, M-Pesa payment, officer approval, signed certificates). The app is deliberately small; the
 **test system around it** is the point.
 
-**v0.2.0 at a glance:** 164 API tests (run on SQLite *and* PostgreSQL) · 17 browser tests × 4 browsers ·
-axe accessibility scans on every page · k6 performance gate · every change through issue → branch → PR → CI → merge.
+**v0.3.0 at a glance:** 289 API tests (SQLite *and* PostgreSQL) · 27 contract tests against WireMock ·
+25 browser tests × 4 browsers · axe on every page · OWASP ZAP on every PR · k6 load / stress / soak ·
+legacy migration with SQL reconciliation · **6 defects found by the test system and fixed test-first**.
 
 [![CI](https://github.com/Daniel-Kav/permitpass-qa/actions/workflows/ci.yml/badge.svg)](https://github.com/Daniel-Kav/permitpass-qa/actions/workflows/ci.yml)
 
@@ -103,11 +104,24 @@ postman/           manual/exploratory API collection
 docs/              strategy, traceability, defects, UAT
 ```
 
+## Defects the test system found
+
+| Defect | Found by | Fixed in |
+| --- | --- | --- |
+| [#13](https://github.com/Daniel-Kav/permitpass-qa/issues/13) timestamps without a time zone | screenshot review | [#14](https://github.com/Daniel-Kav/permitpass-qa/pull/14) |
+| [#25](https://github.com/Daniel-Kav/permitpass-qa/issues/25) **password in the URL** without JS | OWASP ZAP | [#27](https://github.com/Daniel-Kav/permitpass-qa/pull/27) |
+| [#26](https://github.com/Daniel-Kav/permitpass-qa/issues/26) missing security headers / CSP | OWASP ZAP | [#28](https://github.com/Daniel-Kav/permitpass-qa/pull/28) |
+| [#34](https://github.com/Daniel-Kav/permitpass-qa/issues/34) **race: duplicate approvals, 500s** | k6 load test | [#35](https://github.com/Daniel-Kav/permitpass-qa/pull/35) |
+| [#36](https://github.com/Daniel-Kav/permitpass-qa/issues/36) single worker saturates at ~44 req/s | k6 stress test | open (v0.4.0) |
+| [#30](https://github.com/Daniel-Kav/permitpass-qa/issues/30) payments with no callback stay pending | building M-Pesa | open (v0.4.0) |
+
+Each fix starts with a commit that reproduces the defect as a failing test.
+
 ## How this repo is run
 
 Every change is an issue, a short-lived branch, a pull request with a testing checklist, and a merge once CI is green.
 Browse the [merged pull requests](https://github.com/Daniel-Kav/permitpass-qa/pulls?q=is%3Apr+is%3Amerged) and the
-[v0.2.0 milestone](https://github.com/Daniel-Kav/permitpass-qa/milestone/1?closed=1) to see the history.
+[v0.2.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/1?closed=1) and [v0.3.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/2?closed=1) milestones to see the history.
 
 ```
 main ─●────●─────────●──────────●───────────●──────────────●──────────●──── v0.2.0

@@ -2,6 +2,27 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [0.3.0] - 2026-11-06: Integrations, data and non-functional
+
+### Added
+- **KRA PIN verification** over SOAP (3 s timeout, defusedxml); fails closed with 503 if KRA is down (#19, #29)
+- **M-Pesa STK push** payments: `payment_pending` state, OAuth, shared-secret callback that is idempotent and row-locked, amount-mismatch flagging, retry after failure (#20, #31)
+- **Service virtualisation**: WireMock stubs for KRA and Daraja with test-data rules; M-Pesa stubs call back via webhooks (#29, #31)
+- **Contract tests**: real clients vs stubs, no unmatched requests, and fakes proven to match stubs (#29, #31)
+- **Legacy data migration**: cleansing rules R1–R8, rejects file, idempotent re-runs, 10 SQL reconciliation checks, CLI that gates on them (#21, #32)
+- **Performance**: load, stress and soak k6 profiles with per-kind service levels; nightly and manual workflow (#22, #33)
+- **Security**: OWASP ZAP baseline on every PR, strict, with justified ignores (#18, #24)
+- **UAT pack**: 12 scripts, entry/exit criteria, sign-off template, `make uat-data` (#23, #37)
+
+### Fixed
+- Login form fell back to GET and put the password in the URL; found by ZAP (#25, #27)
+- Missing security headers: strict CSP, clickjacking, nosniff, permissions, COOP/COEP/CORP, no-store for API data; found by ZAP (#26, #28)
+- Concurrent officer actions raced: duplicate approvals and 500s on issue; found by the load test (#34, #35)
+
+### Known issues
+- Payments that never receive a callback stay `payment_pending` (#30)
+- A single API worker saturates at about 44 req/s under stress (#36)
+
 ## [0.2.0] - 2026-11-06: Core platform
 
 ### Added
