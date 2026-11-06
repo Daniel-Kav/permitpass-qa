@@ -48,3 +48,37 @@ def test_only_one_concurrent_transition_wins(client, action, steps):
         assert sorted(codes) == [200] + [409] * (PARALLEL - 1), f"{action}: {codes}"
         events = [e for e in client.get(f"/applications/{app_id}/history", headers=OFFICER).json() if e["action"] == action]
         assert len(events) == 1, f"{action}: {len(events)} audit events for one application"
+
+
+def test_concurrent_sweeps_process_each_payment_once(client, monkeypatch):
+    """Two workers sweeping at the same moment (SKIP LOCKED): every stuck payment expires exactly once (#30)."""
+    from datetime import timedelta
+
+    from conftest import ADMIN, act
+
+    from permitpass import clock, config
+
+    real_now = clock.now
+    ids = []
+    for _ in range(6):
+        app_id = new_application(client, ["submit"])
+        act(client, app_id, "pay", phone="0700000000")       # never answers
+        ids.append(app_id)
+    monkeypatch.setattr(clock, "now", lambda: real_now() + timedelta(seconds=config.PAYMENT_EXPIRE_AFTER_SECONDS + 1))
+
+    barrier, results = threading.Barrier(PARALLEL), []
+
+    def worker():
+        c = TestClient(app, raise_server_exceptions=False)
+        barrier.wait()
+        results.append(c.post("/admin/payments/sweep", headers=ADMIN).json())
+
+    threads = [threading.Thread(target=worker) for _ in range(PARALLEL)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert sum(r["outcomes"].get("expired", 0) for r in results) == 6
+    for app_id in ids:
+        events = [e["action"] for e in client.get(f"/applications/{app_id}/history", headers=OFFICER).json()]
+        assert events.count("payment_failed") == 1

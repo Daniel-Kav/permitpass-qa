@@ -24,7 +24,7 @@ from .audit import record
 from .deps import get_kra_client, get_mpesa_client
 from .integrations.mpesa import MpesaClient
 from .payments import router as payments_router
-from .payments import start_payment
+from .payments import BackgroundSweeper, start_payment
 from .integrations.kra import KraClient, KraUnavailable, PinStatus
 from .db import SessionLocal, get_db, init_db, reset_db  # noqa: F401  (reset_db re-exported for tests)
 from .domain import ACTION_ROLES, PERMIT_FEE_KES, REASON_REQUIRED, TRANSITIONS, Role, State
@@ -41,7 +41,13 @@ async def lifespan(_: FastAPI):
 
         with SessionLocal() as session:
             seed_users(session)
+    sweeper = None
+    if config.PAYMENT_SWEEP_INTERVAL_SECONDS > 0:
+        sweeper = BackgroundSweeper(config.PAYMENT_SWEEP_INTERVAL_SECONDS)
+        sweeper.start()
     yield
+    if sweeper:
+        sweeper.stop()
 
 
 app = FastAPI(title="PermitPass API", version="0.2.0", lifespan=lifespan)

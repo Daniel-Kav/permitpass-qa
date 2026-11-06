@@ -1,0 +1,50 @@
+{
+  "name": "M-Pesa: STK query for ws_CO_QCX_* -> cancelled",
+  "priority": 2,
+  "request": {
+    "method": "POST",
+    "urlPath": "/mpesa/stkpushquery/v1/query",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer wiremock-token"
+      },
+      "Content-Type": {
+        "contains": "application/json"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.BusinessShortCode"
+      },
+      {
+        "matchesJsonPath": "$.Password"
+      },
+      {
+        "matchesJsonPath": "$[?(@.Timestamp =~ /[0-9]{14}/)]"
+      },
+      {
+        "matchesJsonPath": "$.CheckoutRequestID"
+      },
+      {
+        "matchesJsonPath": "$[?(@.CheckoutRequestID =~ /ws_CO_QCX_.*/)]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "ResponseCode": "0",
+      "ResponseDescription": "The service request has been accepted successsfully",
+      "MerchantRequestID": "wm-q",
+      "CheckoutRequestID": "{{jsonPath request.body '$.CheckoutRequestID'}}",
+      "ResultCode": "1032",
+      "ResultDesc": "Request cancelled by user"
+    },
+    "transformers": [
+      "response-template"
+    ]
+  }
+}

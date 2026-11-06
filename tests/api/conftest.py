@@ -18,6 +18,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///:memory:")
 os.environ.setdefault("JWT_SECRET", "test-secret-0123456789abcdef0123456789")
 os.environ.setdefault("PASSWORD_HASH_ITERATIONS", "1000")
 os.environ.setdefault("INTEGRATIONS_MODE", "fake")
+os.environ.setdefault("PAYMENT_SWEEP_INTERVAL_SECONDS", "0")   # tests run the sweep explicitly
 
 from fastapi.testclient import TestClient  # noqa: E402
 

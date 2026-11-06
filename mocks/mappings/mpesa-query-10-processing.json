@@ -1,0 +1,41 @@
+{
+  "name": "M-Pesa: STK query -> still processing (default)",
+  "priority": 10,
+  "request": {
+    "method": "POST",
+    "urlPath": "/mpesa/stkpushquery/v1/query",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer wiremock-token"
+      },
+      "Content-Type": {
+        "contains": "application/json"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.BusinessShortCode"
+      },
+      {
+        "matchesJsonPath": "$.Password"
+      },
+      {
+        "matchesJsonPath": "$[?(@.Timestamp =~ /[0-9]{14}/)]"
+      },
+      {
+        "matchesJsonPath": "$.CheckoutRequestID"
+      }
+    ]
+  },
+  "response": {
+    "status": 500,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "requestId": "wm-q",
+      "errorCode": "500.001.1001",
+      "errorMessage": "The transaction is being processed"
+    }
+  }
+}

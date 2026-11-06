@@ -104,7 +104,7 @@ def test_fake_and_stubs_agree(wiremock, mpesa, receiver, msisdn, rule):
             _push(mpesa, receiver, "0" + msisdn[3:], ref)
         return
     _push(mpesa, receiver, "0" + msisdn[3:], ref)
-    expected = 0 if rule == "no_callback" else 2 if rule == "duplicate" else 1
+    expected = 0 if rule in ("no_callback", "query_success", "query_cancelled") else 2 if rule == "duplicate" else 1
     got = wait_for(receiver.got, expected, seconds=3 if expected else 2.5)
     assert len(got) == expected
     if expected:
@@ -124,3 +124,29 @@ def test_requests_without_bearer_token_break_the_contract(wiremock, base_url):
 
 def test_phone_normalisation_matches_stub_rules():
     assert normalise_phone("0700000032") == "254700000032"
+
+
+# ---------- STK Push Query (#30) ----------
+
+@pytest.mark.parametrize("phone,processing,code", [
+    ("0700000003", False, 0),        # query says success
+    ("0700000004", False, 1032),     # query says cancelled
+    ("0700000000", True, None),      # still processing
+])
+def test_stk_query(wiremock, mpesa, receiver, phone, processing, code):
+    push = _push(mpesa, receiver, phone, f"Q{phone[-4:]}ABCDEFG")
+    result = mpesa.stk_query(push.checkout_request_id)
+    assert (result.processing, result.result_code) == (processing, code)
+    time.sleep(1.5)
+    assert receiver.got == []        # these phones never call back
+
+
+@pytest.mark.parametrize("phone", ["0700000003", "0700000004", "0700000000"])
+def test_fake_query_agrees_with_stub(wiremock, mpesa, receiver, phone):
+    from permitpass.integrations.fakes import FakeMpesaClient
+    fake = FakeMpesaClient()
+    ref = f"G{phone[-4:]}ABCDEFG"
+    real_push = _push(mpesa, receiver, phone, ref)
+    fake_push = fake.stk_push(phone, 2500, ref, "Permit fee", receiver.url)
+    assert real_push.checkout_request_id == fake_push.checkout_request_id
+    assert mpesa.stk_query(real_push.checkout_request_id) == fake.stk_query(fake_push.checkout_request_id)

@@ -31,7 +31,13 @@ carried (after about 1 s), exactly like Safaricom. `CheckoutRequestID` is `ws_CO
 | `0700000002` | success callback sent **twice** | paid once; second is "Already processed" |
 | `0700000000` | **none** | stays `payment_pending` |
 | `0700000500` | STK request fails (HTTP 500) | 503, nothing changes |
+| `0700000003` | **none**, but the **STK query** says success | sweep marks it `paid` (no receipt in query answers) |
+| `0700000004` | **none**, but the **STK query** says cancelled (1032) | sweep returns it to `submitted` |
 | any other valid number | success for the exact amount | `paid`, receipt stored |
+
+**STK Push Query** (`/mpesa/stkpushquery/v1/query`): `CheckoutRequestID`s starting `ws_CO_QOK_` (phone 0700000003)
+answer success, `ws_CO_QCX_` (0700000004) answer cancelled, and anything else answers *"The transaction is being
+processed"* (HTTP 500, error 500.001.1001), so 0700000000 eventually **expires**.
 
 OAuth: `GET /oauth/v1/generate?grant_type=client_credentials` with Basic auth returns `wiremock-token`. STK requests
 must carry `Authorization: Bearer wiremock-token` and every required Daraja field (`BusinessShortCode`, `Password`,

@@ -113,7 +113,7 @@ docs/              strategy, traceability, defects, UAT
 | [#26](https://github.com/Daniel-Kav/permitpass-qa/issues/26) missing security headers / CSP | OWASP ZAP | [#28](https://github.com/Daniel-Kav/permitpass-qa/pull/28) |
 | [#34](https://github.com/Daniel-Kav/permitpass-qa/issues/34) **race: duplicate approvals, 500s** | k6 load test | [#35](https://github.com/Daniel-Kav/permitpass-qa/pull/35) |
 | [#36](https://github.com/Daniel-Kav/permitpass-qa/issues/36) single worker saturates at ~44 req/s | k6 stress test | open (v0.4.0) |
-| [#30](https://github.com/Daniel-Kav/permitpass-qa/issues/30) payments with no callback stay pending | building M-Pesa | open (v0.4.0) |
+| [#30](https://github.com/Daniel-Kav/permitpass-qa/issues/30) payments with no callback stay pending | building M-Pesa | [#41](https://github.com/Daniel-Kav/permitpass-qa/pull/41) |
 
 Each fix starts with a commit that reproduces the defect as a failing test.
 
