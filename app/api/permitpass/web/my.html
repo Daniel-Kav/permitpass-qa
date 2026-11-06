@@ -52,5 +52,15 @@
     </div>
   </section>
 </main>
+<template id="pay-tpl">
+  <form class="reason-form pay-form">
+    <div>
+      <label>M-Pesa phone number</label>
+      <input name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="0712 345 678">
+    </div>
+    <button type="submit">Send payment request</button>
+    <button type="button" class="secondary" data-cancel>Cancel</button>
+  </form>
+</template>
 </body>
 </html>
