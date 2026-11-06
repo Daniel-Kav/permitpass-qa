@@ -1,4 +1,4 @@
-.PHONY: up down test test-api test-e2e perf-smoke migrate-demo
+.PHONY: up down test test-api test-e2e perf-smoke migrate-demo uat-data
 
 up:            ## Start the full stack
 	docker compose up -d --build
@@ -21,3 +21,6 @@ perf-smoke:    ## 30-second k6 smoke (needs `make up` and k6)
 migrate-demo:  ## Import the legacy fixture into the Compose DB and reconcile
 	docker compose cp data-migration/legacy/permits_export.csv api:/tmp/permits_export.csv
 	docker compose exec api python -m permitpass.migrate_legacy /tmp/permits_export.csv --rejects /tmp/rejects.csv
+
+uat-data:      ## Seed realistic UAT data through the running API
+	python scripts/seed_uat.py --base-url http://localhost:8000

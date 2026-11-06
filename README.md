@@ -50,7 +50,7 @@ make perf-smoke      # k6 (needs k6 installed)
 | Security (OWASP ZAP baseline) | CI | v0.3.0 |
 | Data migration: cleansing rules, rejects, idempotency, SQL reconciliation | `data-migration/`, [`docs/data-migration.md`](docs/data-migration.md) | Done |
 | Defect management | `.github/ISSUE_TEMPLATE/`, `docs/defects/` | In use: see [#13](https://github.com/Daniel-Kav/permitpass-qa/issues/13) → [#14](https://github.com/Daniel-Kav/permitpass-qa/pull/14) |
-| UAT scripts and sign-off | `docs/uat/` | v0.3.0 |
+| UAT: 12 scripts (★ must-pass), entry/exit criteria, sign-off, data seed | [`docs/uat/`](docs/uat/README.md), `scripts/seed_uat.py` | Done |
 | CI/CD quality gates | `.github/workflows/ci.yml` | Live: API × 2 DBs, E2E × 3 browsers, perf |
 | Bash automation | `scripts/`, `Makefile` | Live |
 
