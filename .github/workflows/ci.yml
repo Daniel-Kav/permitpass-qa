@@ -127,7 +127,7 @@ jobs:
         with:
           target: http://localhost:8000/
           rules_file_name: .zap/rules.tsv
-          cmd_options: "-I -j"   # -j: AJAX spider for the JS pages. Pass/fail comes from rules.tsv via fail_action
+          cmd_options: "-j"   # AJAX spider for the JS pages; no -I, so any warning fails the job
           fail_action: true
           allow_issue_writing: false
           artifact_name: zap-report
