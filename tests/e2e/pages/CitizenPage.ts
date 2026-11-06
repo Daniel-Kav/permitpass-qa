@@ -16,6 +16,11 @@ export class CitizenPage {
   }
 
   async submit(name: string) { await this.page.getByRole('button', { name: `Submit ${name}` }).click(); }
-  async pay(name: string) { await this.page.getByRole('button', { name: new RegExp(`^Pay KES \\d+ for ${name}$`) }).click(); }
+  async pay(name: string, phone = '0712345678') {
+    await this.page.getByRole('button', { name: new RegExp(`^Pay KES \\d+ for ${name}$`) }).click();
+    const row = this.row(name);
+    await row.getByLabel('M-Pesa phone number').fill(phone);
+    await row.getByRole('button', { name: 'Send payment request' }).click();
+  }
   async expectState(name: string, state: string) { await expect(this.row(name).locator('.badge')).toHaveText(state); }
 }

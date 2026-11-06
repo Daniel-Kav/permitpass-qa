@@ -4,7 +4,7 @@ Traceability: US-18.
 """
 import pytest
 
-from conftest import ADMIN, CITIZEN, OFFICER, OTHER_CITIZEN, VALID_APPLICATION
+from conftest import ADMIN, CITIZEN, OFFICER, OTHER_CITIZEN, VALID_APPLICATION, drive
 
 
 def _new(client):
@@ -17,13 +17,13 @@ def _history(client, app_id, headers=CITIZEN):
 
 def test_full_lifecycle_is_recorded_in_order(client):
     app_id = _new(client)
-    for action, who in [("submit", CITIZEN), ("pay", CITIZEN), ("approve", OFFICER), ("issue", OFFICER)]:
-        assert client.post(f"/applications/{app_id}/{action}", headers=who).status_code == 200
+    drive(client, app_id, ["submit", "pay", "approve", "issue"])
     events = _history(client, app_id).json()
     assert [(e["action"], e["from_state"], e["to_state"], e["actor_id"]) for e in events] == [
         ("create", None, "draft", "citizen-1"),
         ("submit", "draft", "submitted", "citizen-1"),
-        ("pay", "submitted", "paid", "citizen-1"),
+        ("pay", "submitted", "payment_pending", "citizen-1"),
+        ("payment_confirmed", "payment_pending", "paid", "system:mpesa"),
         ("approve", "paid", "approved", "officer-1"),
         ("issue", "approved", "issued", "officer-1"),
     ]

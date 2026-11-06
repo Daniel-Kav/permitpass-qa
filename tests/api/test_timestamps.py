@@ -6,14 +6,13 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from conftest import CITIZEN, OFFICER, VALID_APPLICATION
+from conftest import CITIZEN, OFFICER, VALID_APPLICATION, drive
 
 
 @pytest.fixture
 def issued(client):
     app_id = client.post("/applications", json=VALID_APPLICATION, headers=CITIZEN).json()["id"]
-    for action, who in [("submit", CITIZEN), ("pay", CITIZEN), ("approve", OFFICER), ("issue", OFFICER)]:
-        client.post(f"/applications/{app_id}/{action}", headers=who)
+    drive(client, app_id, ["submit", "pay", "approve", "issue"])
     client.post(f"/applications/{app_id}/revoke", json={"reason": "Closed"}, headers=OFFICER)
     return app_id
 
@@ -23,7 +22,10 @@ def _timestamps(client, app_id):
     listed = client.get("/applications", headers=CITIZEN).json()["items"][0]
     history = client.get(f"/applications/{app_id}/history", headers=CITIZEN).json()
     cert = client.get(f"/applications/{app_id}/certificate", headers=CITIZEN).json()
+    payment = client.get(f"/applications/{app_id}/payments", headers=CITIZEN).json()[0]
     return {
+        "payment.created_at": payment["created_at"],
+        "payment.completed_at": payment["completed_at"],
         "application.created_at": app["created_at"],
         "list.created_at": listed["created_at"],
         **{f"history[{i}].at": e["at"] for i, e in enumerate(history)},

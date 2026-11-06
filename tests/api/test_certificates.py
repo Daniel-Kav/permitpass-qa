@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from conftest import CITIZEN, OFFICER, OTHER_CITIZEN, VALID_APPLICATION
+from conftest import CITIZEN, OFFICER, OTHER_CITIZEN, VALID_APPLICATION, drive
 
 from permitpass import clock
 from permitpass.certificates import VALIDITY
@@ -19,8 +19,7 @@ STEPS = [("submit", CITIZEN), ("pay", CITIZEN), ("approve", OFFICER), ("issue", 
 
 def _issued(client):
     app_id = client.post("/applications", json=VALID_APPLICATION, headers=CITIZEN).json()["id"]
-    for action, who in STEPS:
-        assert client.post(f"/applications/{app_id}/{action}", headers=who).status_code == 200
+    drive(client, app_id, [a for a, _ in STEPS])
     cert = client.get(f"/applications/{app_id}/certificate", headers=CITIZEN).json()
     return app_id, cert
 

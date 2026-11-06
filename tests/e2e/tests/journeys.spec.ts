@@ -19,7 +19,10 @@ test('citizen applies and pays, officer approves and issues, public verifies', a
   await citizen.submit(name);
   await citizen.expectState(name, 'submitted');
   await citizen.pay(name);
-  await citizen.expectState(name, 'paid');
+  await citizen.expectState(name, 'payment_pending');
+  await expect(citizen.row(name)).toContainText('Check your phone');
+  await expect(citizen.row(name).locator('.badge')).toHaveText('paid', { timeout: 15_000 });   // M-Pesa callback
+  await expect(citizen.status()).toContainText(`Payment received for ${name}`);
 
   // Officer, in a separate session
   const officerCtx = await browser.newContext();
@@ -136,6 +139,27 @@ test('invalid KRA PIN is explained to the citizen', async ({ page }) => {
   await citizen.create('Bad Pin Ltd', 'B123');
   await expect(citizen.status()).toHaveClass(/error/);
   await expect(citizen.status()).toContainText('kra_pin');
+});
+
+test('a cancelled M-Pesa payment is explained and can be retried', async ({ page, api }) => {
+  const app = await api.application(['submit']);
+  await new LoginPage(page).loginAs('citizen');
+  const citizen = new CitizenPage(page);
+  await citizen.pay(app.name, '0700000032');                     // stub: user cancels on the phone
+  await expect(citizen.row(app.name).locator('.badge')).toHaveText('submitted', { timeout: 15_000 });
+  await expect(citizen.row(app.name)).toContainText('Payment failed: Request cancelled by user (M-Pesa code 1032)');
+  await expect(citizen.status()).toContainText('did not go through');
+  await citizen.pay(app.name);                                    // retry with a normal number
+  await expect(citizen.row(app.name).locator('.badge')).toHaveText('paid', { timeout: 15_000 });
+});
+
+test('an invalid M-Pesa number is refused before any payment starts', async ({ page, api }) => {
+  const app = await api.application(['submit']);
+  await new LoginPage(page).loginAs('citizen');
+  const citizen = new CitizenPage(page);
+  await citizen.pay(app.name, '0812345678');
+  await expect(citizen.status()).toHaveClass(/error/);
+  await citizen.expectState(app.name, 'submitted');
 });
 
 test('a KRA PIN that is not registered is refused with a clear message', async ({ page }) => {
