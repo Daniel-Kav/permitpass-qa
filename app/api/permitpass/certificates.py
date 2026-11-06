@@ -7,7 +7,7 @@ import base64
 import hashlib
 import hmac
 import secrets
-from datetime import timedelta
+from datetime import datetime, timedelta
 from enum import Enum
 
 from fastapi import APIRouter, Depends, Query
@@ -47,8 +47,8 @@ def sign(c: CertificateRow) -> str:
     return base64.urlsafe_b64encode(mac).rstrip(b"=").decode()
 
 
-def new_certificate(application: ApplicationRow) -> CertificateRow:
-    issued = clock.now().replace(microsecond=0)
+def new_certificate(application: ApplicationRow, issued_at: datetime | None = None) -> CertificateRow:
+    issued = (issued_at or clock.now()).replace(microsecond=0)
     cert = CertificateRow(
         number=f"PP-{issued.year}-{secrets.token_hex(4).upper()}",
         application_id=application.id,

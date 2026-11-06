@@ -45,6 +45,7 @@ ACTION_ROLES: dict[str, set[Role]] = {
 # Transitions only the system may perform (from the M-Pesa callback), never via the API's action endpoint
 SYSTEM_ACTIONS = {"payment_confirmed", "payment_failed"}
 SYSTEM_ACTOR_MPESA = "system:mpesa"
+SYSTEM_ACTOR_MIGRATION = "system:migration"
 
 # Actions that must carry a reason
 REASON_REQUIRED = {"reject", "revoke"}
