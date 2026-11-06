@@ -23,3 +23,14 @@ SEED_DEMO_USERS = os.getenv("SEED_DEMO_USERS", "false").lower() == "true"
 INTEGRATIONS_MODE = os.getenv("INTEGRATIONS_MODE", "real")
 KRA_BASE_URL = os.getenv("KRA_BASE_URL", "")
 KRA_TIMEOUT_SECONDS = float(os.getenv("KRA_TIMEOUT_SECONDS", "3"))
+MPESA_BASE_URL = os.getenv("MPESA_BASE_URL", "")
+MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY", "dev-consumer-key")
+MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET", "dev-consumer-secret")
+MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE", "174379")
+MPESA_PASSKEY = os.getenv("MPESA_PASSKEY", "dev-passkey")
+MPESA_TIMEOUT_SECONDS = float(os.getenv("MPESA_TIMEOUT_SECONDS", "10"))
+# Where M-Pesa should POST results. The token must match MPESA_CALLBACK_TOKEN.
+MPESA_CALLBACK_TOKEN = os.getenv("MPESA_CALLBACK_TOKEN", "dev-callback-token-0123456789")
+MPESA_CALLBACK_URL = os.getenv(
+    "MPESA_CALLBACK_URL", f"http://localhost:8000/payments/mpesa/callback?token={MPESA_CALLBACK_TOKEN}"
+)

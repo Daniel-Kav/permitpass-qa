@@ -49,10 +49,15 @@ class Application(BaseModel):
     fee_kes: int
     created_at: UTCDateTime
     rejection_reason: str | None = None
+    payment_note: str | None = None
+
+
+KENYAN_MOBILE = r"^(?:\+?254|0)[17]\d{8}$"
 
 
 class ActionIn(BaseModel):
     reason: str | None = Field(default=None, max_length=500)
+    phone: str | None = Field(default=None, pattern=KENYAN_MOBILE, description="M-Pesa number for 'pay', e.g. 0712345678")
 
 
 class AuditEvent(BaseModel):
@@ -84,3 +89,17 @@ class Certificate(BaseModel):
     revoked_at: UTCDateTime | None
     revoked_reason: str | None
     verify_url: str
+
+
+class Payment(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    checkout_request_id: str
+    phone: str
+    amount: int
+    status: str
+    result_code: int | None
+    result_desc: str | None
+    mpesa_receipt: str | None
+    created_at: UTCDateTime
+    completed_at: UTCDateTime | None
