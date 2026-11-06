@@ -22,3 +22,4 @@ US-20,Officers can revoke an issued permit with a reason; revocation is audited 
 US-21,Every portal page has zero serious or critical WCAG 2.1 AA violations and works by keyboard,accessibility.spec.ts (6 tests incl. error and open-form states; keyboard-only login),covered
 US-22,All API timestamps are UTC with an explicit offset on every database engine (regression for #13),test_timestamps.py::test_every_timestamp_has_utc_offset,covered
 US-23,Credentials are never sent in a URL even if JavaScript fails (regression for #25),test_web_forms.py::test_forms_with_passwords_never_submit_by_get; journeys.spec.ts › without JavaScript,covered
+US-24,Every response carries security headers (CSP without inline scripts / clickjacking / nosniff / permissions / COOP-COEP-CORP); API data is never cached (regression for #26),test_security_headers.py::test_headers_on_every_response; security.spec.ts (zero CSP violations),covered

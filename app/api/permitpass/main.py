@@ -23,6 +23,7 @@ from .auth import router as auth_router
 from .db import SessionLocal, get_db, init_db, reset_db  # noqa: F401  (reset_db re-exported for tests)
 from .domain import ACTION_ROLES, PERMIT_FEE_KES, REASON_REQUIRED, TRANSITIONS, Role, State
 from .models import ApplicationRow, AuditEventRow, CertificateRow, UserRow
+from .security_headers import SecurityHeadersMiddleware
 from .schemas import ActionIn, Application, ApplicationIn, ApplicationPage, AuditEvent, Certificate
 
 
@@ -38,6 +39,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="PermitPass API", version="0.2.0", lifespan=lifespan)
+app.add_middleware(SecurityHeadersMiddleware)
 app.include_router(auth_router)
 app.include_router(certificates_router)
 
