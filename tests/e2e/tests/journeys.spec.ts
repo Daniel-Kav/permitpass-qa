@@ -137,3 +137,16 @@ test('invalid KRA PIN is explained to the citizen', async ({ page }) => {
   await expect(citizen.status()).toHaveClass(/error/);
   await expect(citizen.status()).toContainText('kra_pin');
 });
+
+test.describe('without JavaScript', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('submitting the login form never puts the password in the URL (#25)', async ({ page }) => {
+    await page.goto('/');
+    await page.getByLabel('Email').fill('citizen@permitpass.test');
+    await page.getByLabel('Password').fill('PermitPass!2026');
+    await Promise.all([page.waitForLoadState(), page.getByRole('button', { name: 'Log in' }).click()]);
+    expect(page.url()).not.toContain('password');
+    expect(page.url()).not.toContain('PermitPass');
+  });
+});
