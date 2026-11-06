@@ -1,0 +1,6 @@
+# ZAP baseline rule overrides: <rule id>	<IGNORE|WARN|FAIL>	<reason>
+# Every override needs a reason. Default: any passive finding FAILS the build (no -I flag).
+10035	IGNORE	(Strict-Transport-Security) CI scans plain http://localhost; HSTS is set by the TLS-terminating proxy in real environments
+10111	IGNORE	(Authentication Request Identified) Informational: ZAP noting the login form exists, not a vulnerability
+10049	IGNORE	(Storable and Cacheable Content) Only static CSS/JS are cacheable, on purpose; API data is no-store (asserted in test_security_headers.py)
+10202	IGNORE	(Absence of Anti-CSRF Tokens) Not applicable: auth is a bearer token set by JavaScript, never a cookie, and login only accepts JSON. Both are asserted in test_security_headers.py (no Set-Cookie; form-encoded logins refused)
