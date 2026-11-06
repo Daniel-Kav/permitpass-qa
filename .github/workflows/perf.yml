@@ -1,0 +1,70 @@
+name: Performance
+
+on:
+  pull_request:
+    paths: ["perf/**", ".github/workflows/perf.yml"]
+  schedule:
+    - cron: "17 0 * * *"          # nightly load test, 03:17 Nairobi
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Which profile to run"
+        type: choice
+        options: [load, stress, soak]
+        default: load
+      duration:
+        description: "Soak duration (k6 format, e.g. 30m, 2h)"
+        default: 30m
+
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  k6:
+    name: k6 (${{ inputs.profile || 'load' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PROFILE: ${{ inputs.profile || 'load' }}
+      # PRs run a shorter hold so reviews aren't slowed down; nightly and manual runs use the full profile
+      HOLD: ${{ github.event_name == 'pull_request' && '2m' || '5m' }}
+      DURATION: ${{ inputs.duration || '30m' }}
+      ACCESS_TOKEN_MINUTES: "240"    # long enough for a soak (tokens are issued once, in setup)
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start stack
+        run: |
+          docker compose up -d --build
+          ./scripts/wait-for.sh http://localhost:8000/health 90
+      - name: Sample container CPU and memory in the background
+        run: nohup ./perf/sample-stats.sh perf-stats.csv 10 > /dev/null 2>&1 &
+      - uses: grafana/setup-k6-action@v1
+      - name: Run ${{ env.PROFILE }}
+        id: k6
+        continue-on-error: true
+        run: k6 run --quiet perf/${PROFILE}.js
+      - name: Job summary
+        if: always()
+        run: |
+          cat perf-summary.md >> "$GITHUB_STEP_SUMMARY" || echo "No k6 summary produced" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### API container memory (first → last sample)"
+            grep -E ',permitpass-qa-api-1,' perf-stats.csv | sed -n '1p;$p' | awk -F, '{print "- " $1 ": " $4}'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf-${{ env.PROFILE }}-${{ github.run_number }}
+          path: |
+            perf-summary.md
+            perf-summary.json
+            perf-stats.csv
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
+      - name: Fail if thresholds failed (stress is exploratory and never fails the job)
+        if: steps.k6.outcome == 'failure' && env.PROFILE != 'stress'
+        run: |
+          echo "::error::k6 thresholds failed; see the job summary"
+          exit 1
