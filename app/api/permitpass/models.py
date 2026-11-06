@@ -20,6 +20,7 @@ class ApplicationRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     rejection_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
     payment_note: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    legacy_id: Mapped[str | None] = mapped_column(String(32), unique=True, nullable=True)   # set only by migration
 
 
 class UserRow(Base):

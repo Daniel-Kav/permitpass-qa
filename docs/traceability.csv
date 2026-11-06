@@ -12,7 +12,7 @@ US-10,Issued certificate verifies; tampered / revoked / expired fail,test_certif
 US-11,Web journeys work on Chromium / Firefox / WebKit / mobile Chrome,journeys.spec.ts (11 tests: full journey; reject; revoke; forged code; login and access control; KRA PIN error),covered
 US-12,Portal meets load / stress / soak targets,perf/smoke.js (smoke only: p95 < 300 ms; errors < 1%),partial (load/stress/soak in v0.3.0)
 US-13,Mobile app submits offline and syncs exactly once,,planned (v0.3.0)
-US-14,Legacy records migrate with exact SQL reconciliation,,planned (v0.3.0)
+US-14,Legacy records migrate with documented cleansing / rejects / idempotent re-run and exact SQL reconciliation,test_migration.py (20 tests incl. tamper tests that must fail the right checks),covered
 US-15,Applications and state changes persist in the database (SQLite and PostgreSQL),test_persistence.py::test_created_application_is_stored; test_persistence.py::test_state_change_and_reason_are_stored; test_persistence.py::test_refused_transition_changes_nothing,covered
 US-16,Users log in with email and password and receive a JWT; failures reveal nothing,test_auth.py::test_login_returns_token_with_role; test_auth.py::test_failed_login_gives_one_generic_answer; test_auth.py::test_passwords_are_stored_hashed_and_salted,covered
 US-17,Expired / forged / tampered / alg=none tokens and deactivated users are refused,test_auth.py::test_bad_tokens_are_rejected; test_auth.py::test_role_comes_from_database_not_token; test_auth.py::test_deactivated_user_cannot_log_in_or_use_old_token,covered
