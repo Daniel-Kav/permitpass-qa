@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "app" / "api"))
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///:memory:")
 os.environ.setdefault("JWT_SECRET", "test-secret-0123456789abcdef0123456789")
 os.environ.setdefault("PASSWORD_HASH_ITERATIONS", "1000")
+os.environ.setdefault("INTEGRATIONS_MODE", "fake")
 
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -39,7 +40,19 @@ def clean_db():
 
 
 @pytest.fixture
-def client():
+def kra():
+    """The fake KRA client the app uses in this test (records every PIN it was asked about)."""
+    from permitpass.deps import get_kra_client
+    from permitpass.integrations.fakes import FakeKraClient
+
+    fake = FakeKraClient()
+    app.dependency_overrides[get_kra_client] = lambda: fake
+    yield fake
+    app.dependency_overrides.pop(get_kra_client, None)
+
+
+@pytest.fixture
+def client(kra):
     if BASE_URL:
         with httpx.Client(base_url=BASE_URL, timeout=10) as c:
             yield c
