@@ -33,8 +33,18 @@ export class Api {
     const name = `E2E ${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
     const app = await this.as('citizen', 'POST', '/applications', { business_name: name, kra_pin: 'A123456789Z' });
     const who: Record<string, UserKey> = { submit: 'citizen', pay: 'citizen', approve: 'officer', issue: 'officer' };
-    for (const step of steps) await this.as(who[step], 'POST', `/applications/${app.id}/${step}`);
+    for (const step of steps) {
+      if (step === 'pay') { await this.pay(app.id); continue; }
+      await this.as(who[step], 'POST', `/applications/${app.id}/${step}`);
+    }
     return { id: app.id as string, name };
+  }
+
+  /** Start an M-Pesa STK push and wait for the (stubbed) callback to mark it paid. */
+  async pay(appId: string, phone = '0712345678') {
+    await this.as('citizen', 'POST', `/applications/${appId}/pay`, { phone });
+    await expect.poll(async () => (await this.as('citizen', 'GET', `/applications/${appId}`)).state,
+      { timeout: 15_000, message: 'M-Pesa callback did not arrive' }).toBe('paid');
   }
 
   async certificate(appId: string) {

@@ -1,0 +1,15 @@
+{
+  "name": "M-Pesa: catch-all for requests that break the contract",
+  "priority": 100,
+  "request": {
+    "method": "ANY",
+    "urlPathPattern": "/(mpesa|oauth)/.*"
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Content-Type": "text/plain"
+    },
+    "body": "CONTRACT VIOLATION: request did not match the Daraja OAuth/STK contract (auth header, required JSON fields)"
+  }
+}

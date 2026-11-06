@@ -29,6 +29,14 @@ test('citizen applications page with data', async ({ page, api }) => {
   await scan(page);
 });
 
+test('citizen page with the M-Pesa payment form open', async ({ page, api }) => {
+  const app = await api.application(['submit']);
+  await new LoginPage(page).loginAs('citizen');
+  await page.getByRole('button', { name: new RegExp(`^Pay KES \\d+ for ${app.name}$`) }).click();
+  await expect(page.getByLabel('M-Pesa phone number')).toBeFocused();
+  await scan(page);
+});
+
 test('officer queue with a reason form open', async ({ page, api }) => {
   const app = await api.application(['submit', 'pay']);
   await new LoginPage(page).loginAs('officer');

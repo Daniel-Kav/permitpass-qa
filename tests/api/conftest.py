@@ -51,8 +51,25 @@ def kra():
     app.dependency_overrides.pop(get_kra_client, None)
 
 
+_CURRENT: dict = {}
+
+
 @pytest.fixture
-def client(kra):
+def mpesa():
+    """The fake M-Pesa client for this test. Callbacks are queued; deliver them with settle()."""
+    from permitpass.deps import get_mpesa_client
+    from permitpass.integrations.fakes import FakeMpesaClient
+
+    fake = FakeMpesaClient()
+    app.dependency_overrides[get_mpesa_client] = lambda: fake
+    _CURRENT["mpesa"] = fake
+    yield fake
+    app.dependency_overrides.pop(get_mpesa_client, None)
+    _CURRENT.clear()
+
+
+@pytest.fixture
+def client(kra, mpesa):
     if BASE_URL:
         with httpx.Client(base_url=BASE_URL, timeout=10) as c:
             yield c
@@ -73,3 +90,55 @@ ADMIN = bearer("admin-1")
 EMAILS = {uid: email for uid, email, _, _ in DEMO_USERS}
 
 VALID_APPLICATION = {"business_name": "Mama Mboga Groceries", "kra_pin": "A123456789Z"}
+
+
+# ---------- helpers for driving applications through the lifecycle ----------
+
+PHONE = "0712345678"
+ACTORS = {"submit": CITIZEN, "pay": CITIZEN, "approve": OFFICER, "reject": OFFICER, "issue": OFFICER, "revoke": OFFICER}
+
+
+def callback_url_token() -> str:
+    from permitpass import config
+    return config.MPESA_CALLBACK_TOKEN
+
+
+def deliver(client, body: dict, token: str | None = None):
+    """POST an M-Pesa result callback, as Safaricom would."""
+    return client.post("/payments/mpesa/callback", params={"token": callback_url_token() if token is None else token}, json=body)
+
+
+def settle(client) -> list:
+    """Deliver every queued M-Pesa callback (success unless the phone number says otherwise)."""
+    fake = _CURRENT["mpesa"]
+    out = [deliver(client, body) for body in fake.pending_callbacks]
+    fake.pending_callbacks.clear()
+    return out
+
+
+def act(client, app_id, action, who=None, reason="Test reason", phone=PHONE):
+    """One API action with the body it needs. 'pay' only starts the STK push (-> payment_pending)."""
+    body = {"reason": reason} if action in ("reject", "revoke") else {"phone": phone} if action == "pay" else None
+    return client.post(f"/applications/{app_id}/{action}", json=body, headers=who or ACTORS[action])
+
+
+def pay(client, app_id, who=None, phone=PHONE):
+    """Pay and let M-Pesa answer: STK push, then the callback(s). Returns the pay response."""
+    r = act(client, app_id, "pay", who, phone=phone)
+    if r.status_code == 200:
+        settle(client)
+    return r
+
+
+def drive(client, app_id, steps):
+    """Run steps in order, asserting each succeeds. 'pay' includes the M-Pesa callback."""
+    for step in steps:
+        r = pay(client, app_id) if step == "pay" else act(client, app_id, step)
+        assert r.status_code == 200, f"{step}: {r.status_code} {r.text}"
+
+
+def new_application(client, steps=(), who=None):
+    r = client.post("/applications", json=VALID_APPLICATION, headers=who or CITIZEN)
+    assert r.status_code == 201, r.text
+    drive(client, r.json()["id"], steps)
+    return r.json()["id"]

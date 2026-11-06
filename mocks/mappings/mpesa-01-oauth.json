@@ -1,0 +1,28 @@
+{
+  "name": "M-Pesa: OAuth client-credentials token",
+  "priority": 1,
+  "request": {
+    "method": "GET",
+    "urlPath": "/oauth/v1/generate",
+    "queryParameters": {
+      "grant_type": {
+        "equalTo": "client_credentials"
+      }
+    },
+    "headers": {
+      "Authorization": {
+        "matches": "Basic [A-Za-z0-9+/=]+"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "access_token": "wiremock-token",
+      "expires_in": "3599"
+    }
+  }
+}

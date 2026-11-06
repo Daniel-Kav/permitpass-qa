@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
 
-from conftest import CITIZEN, EMAILS, PASSWORD, VALID_APPLICATION, bearer
+from conftest import CITIZEN, EMAILS, PASSWORD, VALID_APPLICATION, bearer, drive
 
 from permitpass import config
 from permitpass.db import SessionLocal
@@ -123,7 +123,6 @@ def test_role_comes_from_database_not_token(client):
         config.JWT_SECRET, algorithm="HS256",
     )
     app_id = client.post("/applications", json=VALID_APPLICATION, headers=CITIZEN).json()["id"]
-    client.post(f"/applications/{app_id}/submit", headers=CITIZEN)
-    client.post(f"/applications/{app_id}/pay", headers=CITIZEN)
+    drive(client, app_id, ["submit", "pay"])
     r = client.post(f"/applications/{app_id}/approve", headers={"Authorization": f"Bearer {forged}"})
     assert r.status_code == 403

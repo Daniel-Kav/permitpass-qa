@@ -19,6 +19,7 @@ class ApplicationRow(Base):
     fee_kes: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     rejection_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    payment_note: Mapped[str | None] = mapped_column(String(300), nullable=True)
 
 
 class UserRow(Base):
@@ -58,3 +59,23 @@ class CertificateRow(Base):
     signature: Mapped[str] = mapped_column(String(64))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     revoked_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+
+class PaymentRow(Base):
+    """One STK push attempt. An application can have several (e.g. after a cancelled one)."""
+
+    __tablename__ = "payments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    application_id: Mapped[str] = mapped_column(ForeignKey("applications.id", ondelete="CASCADE"), index=True)
+    account_ref: Mapped[str] = mapped_column(String(12), unique=True)           # Daraja AccountReference (max 12)
+    checkout_request_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    phone: Mapped[str] = mapped_column(String(12))
+    amount: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(20), default="pending")  # pending|succeeded|failed|amount_mismatch
+    result_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    result_desc: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    mpesa_receipt: Mapped[str | None] = mapped_column(String(20), nullable=True, unique=True)
+    paid_amount: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

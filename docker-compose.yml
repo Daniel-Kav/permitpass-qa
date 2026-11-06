@@ -27,6 +27,10 @@ services:
       CERT_SECRET: ${CERT_SECRET:-local-dev-cert-secret-0123456789}
       SEED_DEMO_USERS: "true"   # local dev only
       KRA_BASE_URL: http://mocks:8080
+      MPESA_BASE_URL: http://mocks:8080
+      MPESA_CALLBACK_TOKEN: ${MPESA_CALLBACK_TOKEN:-local-dev-callback-token-0123456789}
+      # WireMock (in its container) calls the API back by its Compose service name
+      MPESA_CALLBACK_URL: http://api:8000/payments/mpesa/callback?token=${MPESA_CALLBACK_TOKEN:-local-dev-callback-token-0123456789}
     depends_on:
       db:
         condition: service_healthy

@@ -4,7 +4,7 @@ Technique: state-transition testing (ISTQB). Traceability: US-01..US-04 in docs/
 """
 import pytest
 
-from conftest import CITIZEN, OFFICER, VALID_APPLICATION
+from conftest import CITIZEN, OFFICER, VALID_APPLICATION, act, pay
 
 ALL_ACTIONS = ["submit", "pay", "approve", "reject", "issue", "revoke"]
 ACTOR = {"submit": CITIZEN, "pay": CITIZEN, "approve": OFFICER, "reject": OFFICER, "issue": OFFICER, "revoke": OFFICER}
@@ -13,6 +13,7 @@ ACTOR = {"submit": CITIZEN, "pay": CITIZEN, "approve": OFFICER, "reject": OFFICE
 PATH_TO = {
     "draft": [],
     "submitted": ["submit"],
+    "payment_pending": ["submit", "pay!"],   # pay! = STK push sent, no M-Pesa answer yet
     "paid": ["submit", "pay"],
     "approved": ["submit", "pay", "approve"],
     "issued": ["submit", "pay", "approve", "issue"],
@@ -32,8 +33,11 @@ def _new_app(client):
 
 
 def _do(client, app_id, action):
-    body = {"reason": "Incomplete documents"} if action in ("reject", "revoke") else None
-    return client.post(f"/applications/{app_id}/{action}", json=body, headers=ACTOR[action])
+    if action == "pay!":
+        return act(client, app_id, "pay")
+    if action == "pay":
+        return pay(client, app_id)
+    return act(client, app_id, action, ACTOR[action])
 
 
 def _drive(client, state):
@@ -53,7 +57,7 @@ def test_happy_path_reaches_issued(client):
 @pytest.mark.parametrize("action", ALL_ACTIONS)
 def test_every_transition(client, state, action):
     app_id = _drive(client, state)
-    r = _do(client, app_id, action)
+    r = act(client, app_id, action, ACTOR[action])   # the user action alone (pay -> payment_pending)
     if (state, action) in LEGAL:
         assert r.status_code == 200, r.text
     else:

@@ -4,7 +4,7 @@ Adding a role or action to the matrix adds coverage automatically.
 """
 import pytest
 
-from conftest import ADMIN, CITIZEN, OFFICER, OTHER_CITIZEN, VALID_APPLICATION
+from conftest import ADMIN, CITIZEN, OFFICER, OTHER_CITIZEN, VALID_APPLICATION, act, drive
 
 ROLES = {"citizen": CITIZEN, "officer": OFFICER, "admin": ADMIN}
 
@@ -19,17 +19,16 @@ MATRIX = {
 }
 SETUP = {
     "draft": [],
-    "submitted": [("submit", CITIZEN)],
-    "paid": [("submit", CITIZEN), ("pay", CITIZEN)],
-    "approved": [("submit", CITIZEN), ("pay", CITIZEN), ("approve", OFFICER)],
-    "issued": [("submit", CITIZEN), ("pay", CITIZEN), ("approve", OFFICER), ("issue", OFFICER)],
+    "submitted": ["submit"],
+    "paid": ["submit", "pay"],
+    "approved": ["submit", "pay", "approve"],
+    "issued": ["submit", "pay", "approve", "issue"],
 }
 
 
 def _prepare(client, state):
     app_id = client.post("/applications", json=VALID_APPLICATION, headers=CITIZEN).json()["id"]
-    for action, who in SETUP[state]:
-        assert client.post(f"/applications/{app_id}/{action}", headers=who).status_code == 200
+    drive(client, app_id, SETUP[state])
     return app_id
 
 
@@ -38,8 +37,7 @@ def _prepare(client, state):
 def test_role_action_matrix(client, role, action):
     state, allowed = MATRIX[action]
     app_id = _prepare(client, state)
-    body = {"reason": "Test"} if action in ("reject", "revoke") else None
-    r = client.post(f"/applications/{app_id}/{action}", json=body, headers=ROLES[role])
+    r = act(client, app_id, action, ROLES[role])
     if role in allowed:
         assert r.status_code == 200, r.text
     else:
@@ -61,7 +59,7 @@ def test_citizen_cannot_read_another_citizens_application(client):
 
 def test_citizen_cannot_pay_another_citizens_application(client):
     app_id = _prepare(client, "submitted")
-    r = client.post(f"/applications/{app_id}/pay", headers=OTHER_CITIZEN)
+    r = act(client, app_id, "pay", OTHER_CITIZEN)
     assert r.status_code == 404
 
 

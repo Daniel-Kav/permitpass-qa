@@ -20,13 +20,17 @@ from .certificates import new_certificate
 from .certificates import router as certificates_router
 from .auth import current_user
 from .auth import router as auth_router
-from .deps import get_kra_client
+from .audit import record
+from .deps import get_kra_client, get_mpesa_client
+from .integrations.mpesa import MpesaClient
+from .payments import router as payments_router
+from .payments import start_payment
 from .integrations.kra import KraClient, KraUnavailable, PinStatus
 from .db import SessionLocal, get_db, init_db, reset_db  # noqa: F401  (reset_db re-exported for tests)
 from .domain import ACTION_ROLES, PERMIT_FEE_KES, REASON_REQUIRED, TRANSITIONS, Role, State
-from .models import ApplicationRow, AuditEventRow, CertificateRow, UserRow
+from .models import ApplicationRow, AuditEventRow, CertificateRow, PaymentRow, UserRow
 from .security_headers import SecurityHeadersMiddleware
-from .schemas import ActionIn, Application, ApplicationIn, ApplicationPage, AuditEvent, Certificate
+from .schemas import ActionIn, Application, ApplicationIn, ApplicationPage, AuditEvent, Certificate, Payment
 
 
 @asynccontextmanager
@@ -44,6 +48,7 @@ app = FastAPI(title="PermitPass API", version="0.2.0", lifespan=lifespan)
 app.add_middleware(SecurityHeadersMiddleware)
 app.include_router(auth_router)
 app.include_router(certificates_router)
+app.include_router(payments_router)
 
 
 def _get_visible(db: Session, app_id: str, user: UserRow) -> ApplicationRow:
@@ -56,9 +61,7 @@ def _get_visible(db: Session, app_id: str, user: UserRow) -> ApplicationRow:
 
 def _record(db: Session, row: ApplicationRow, actor: UserRow, action: str,
             from_state: State | None, reason: str | None = None) -> None:
-    """Add an audit event in the same transaction as the change it describes."""
-    db.add(AuditEventRow(application_id=row.id, actor_id=actor.id, action=action, from_state=from_state,
-                         to_state=row.state, reason=reason, at=clock.now()))
+    record(db, row, actor.id, action, from_state, reason)
 
 
 @app.get("/health")
@@ -133,6 +136,7 @@ def act(
     body: ActionIn | None = None,
     user: UserRow = Depends(current_user),
     db: Session = Depends(get_db),
+    mpesa: MpesaClient = Depends(get_mpesa_client),
 ) -> ApplicationRow:
     if action not in ACTION_ROLES:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown action")
@@ -145,7 +149,12 @@ def act(
     reason = body.reason if body else None
     if action in REASON_REQUIRED and not reason:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"A reason is required to {action}")
-    if action == "reject":
+    if action == "pay":
+        if not body or not body.phone:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "An M-Pesa phone number is required to pay")
+        start_payment(db, row, body.phone, mpesa)
+        reason = "STK push sent to M-Pesa"
+    elif action == "reject":
         row.rejection_reason = reason
     elif action == "issue":
         db.add(new_certificate(row))
@@ -182,6 +191,12 @@ def get_certificate(app_id: str, user: UserRow = Depends(current_user), db: Sess
         {**{c: getattr(cert, c) for c in Certificate.model_fields if c != "verify_url"},
          "verify_url": f"/verify/{cert.number}?sig={cert.signature}"}
     )
+
+
+@app.get("/applications/{app_id}/payments", response_model=list[Payment])
+def list_payments(app_id: str, user: UserRow = Depends(current_user), db: Session = Depends(get_db)) -> list[PaymentRow]:
+    _get_visible(db, app_id, user)
+    return db.scalars(select(PaymentRow).where(PaymentRow.application_id == app_id).order_by(PaymentRow.created_at)).all()
 
 
 # Web portal: mounted last so every API route above takes precedence
