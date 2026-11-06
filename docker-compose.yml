@@ -26,6 +26,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-0123456789}
       CERT_SECRET: ${CERT_SECRET:-local-dev-cert-secret-0123456789}
       SEED_DEMO_USERS: "true"   # local dev only
+      ACCESS_TOKEN_MINUTES: ${ACCESS_TOKEN_MINUTES:-30}   # perf soak runs raise this
       KRA_BASE_URL: http://mocks:8080
       MPESA_BASE_URL: http://mocks:8080
       MPESA_CALLBACK_TOKEN: ${MPESA_CALLBACK_TOKEN:-local-dev-callback-token-0123456789}
