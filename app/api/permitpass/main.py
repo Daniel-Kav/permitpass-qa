@@ -51,8 +51,9 @@ app.include_router(certificates_router)
 app.include_router(payments_router)
 
 
-def _get_visible(db: Session, app_id: str, user: UserRow) -> ApplicationRow:
-    row = db.get(ApplicationRow, app_id)
+def _get_visible(db: Session, app_id: str, user: UserRow, lock: bool = False) -> ApplicationRow:
+    # lock=True: SELECT ... FOR UPDATE, so concurrent transitions on one application run one after another (#34)
+    row = db.get(ApplicationRow, app_id, with_for_update=lock)
     # Citizens may only see their own applications; answer 404 rather than 403 so ids can't be probed (IDOR)
     if row is None or (user.role == Role.citizen and row.owner_id != user.id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Application not found")
@@ -140,7 +141,7 @@ def act(
 ) -> ApplicationRow:
     if action not in ACTION_ROLES:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown action")
-    row = _get_visible(db, app_id, user)
+    row = _get_visible(db, app_id, user, lock=True)   # held until commit: the next request sees the new state
     if user.role not in ACTION_ROLES[action]:
         raise HTTPException(status.HTTP_403_FORBIDDEN, f"Role '{user.role.value}' cannot {action}")
     target = TRANSITIONS.get((row.state, action))
