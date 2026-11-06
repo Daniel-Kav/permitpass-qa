@@ -18,6 +18,29 @@ The unit-test fakes (`app/api/permitpass/integrations/fakes.py`) follow **the sa
 | `777777777` | `A777777777Z` | answers after 5 s (> 3 s timeout) | 503, nothing stored |
 | anything else | `A123456789Z` | `Active` | application created |
 
+### M-Pesa Daraja (OAuth + STK push): rule is the phone number
+
+The STK stub answers immediately, then a **webhook** POSTs the result to whatever `CallBackURL` the request
+carried (after about 1 s), exactly like Safaricom. `CheckoutRequestID` is `ws_CO_<AccountReference>`.
+
+| Phone | Callback | PermitPass behaviour |
+| --- | --- | --- |
+| `0700000032` | ResultCode 1032 "Request cancelled by user" | back to `submitted`, reason shown |
+| `0700000037` | ResultCode 1037 "DS timeout user cannot be reached" | back to `submitted`, reason shown |
+| `0700000001` | success, but **Amount 1** | not paid; payment flagged `amount_mismatch` |
+| `0700000002` | success callback sent **twice** | paid once; second is "Already processed" |
+| `0700000000` | **none** | stays `payment_pending` |
+| `0700000500` | STK request fails (HTTP 500) | 503, nothing changes |
+| any other valid number | success for the exact amount | `paid`, receipt stored |
+
+OAuth: `GET /oauth/v1/generate?grant_type=client_credentials` with Basic auth returns `wiremock-token`. STK requests
+must carry `Authorization: Bearer wiremock-token` and every required Daraja field (`BusinessShortCode`, `Password`,
+14-digit `Timestamp`, `TransactionType`, `Amount`, `PartyA`, `PartyB`, `PhoneNumber`, `CallBackURL`,
+`AccountReference` ≤ 12 chars, `TransactionDesc`).
+
+> **Handlebars tip:** never let a template end right before a JSON `}`. `{{x}}}` parses as a triple-stash.
+> Write `{{x}} }`.
+
 A request that breaks the contract (wrong `SOAPAction`, wrong `Content-Type`, no `ValidatePIN/KRAPIN`) hits a
 **catch-all stub** that returns `400 CONTRACT VIOLATION`, and the contract tests fail.
 
