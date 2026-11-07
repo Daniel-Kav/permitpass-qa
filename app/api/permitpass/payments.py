@@ -199,6 +199,8 @@ class BackgroundSweeper:
             try:
                 with SessionLocal() as db:
                     r = sweep(db, get_mpesa_client())
+                    from .idempotency import prune
+                    prune(db)
                 if r.checked:
                     log.info("payment sweep: %s", r.outcomes)
             except Exception:   # never let one bad run kill the sweeper
