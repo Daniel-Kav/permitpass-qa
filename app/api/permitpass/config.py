@@ -38,3 +38,13 @@ MPESA_CALLBACK_URL = os.getenv(
 PAYMENT_QUERY_AFTER_SECONDS = int(os.getenv("PAYMENT_QUERY_AFTER_SECONDS", "120"))
 PAYMENT_EXPIRE_AFTER_SECONDS = int(os.getenv("PAYMENT_EXPIRE_AFTER_SECONDS", "600"))
 PAYMENT_SWEEP_INTERVAL_SECONDS = int(os.getenv("PAYMENT_SWEEP_INTERVAL_SECONDS", "30"))   # 0 disables the background sweep
+
+# Capacity (#36)
+# In production a pre-start step (python -m permitpass.prestart) creates tables and seeds once, before the
+# workers start; INIT_DB_ON_STARTUP=false then stops N workers racing to do the same thing.
+INIT_DB_ON_STARTUP = os.getenv("INIT_DB_ON_STARTUP", "true").lower() == "true"
+DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "10"))
+DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "10"))
+DB_POOL_TIMEOUT_SECONDS = float(os.getenv("DB_POOL_TIMEOUT_SECONDS", "5"))   # fail fast instead of SQLAlchemy's 30 s
+# Requests a worker accepts at once; beyond that it answers 503 immediately. 0 = unlimited (tests, dev).
+MAX_IN_FLIGHT = int(os.getenv("MAX_IN_FLIGHT", "0"))

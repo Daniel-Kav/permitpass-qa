@@ -7,7 +7,7 @@ threshold.
 | --- | --- | --- | --- |
 | `smoke.js` | 5 VUs, 30 s | every PR (CI) | yes |
 | `load.js` | ramps to **50 VUs** (35 citizens, 10 officers, 5 public), holds 5 min | nightly; PRs touching `perf/` (2 min hold); manual | yes |
-| `stress.js` | arrival rate rising **5 → 120 journeys/s** in steps | manual | no: finds the breaking point |
+| `stress.js` | arrival rate rising **5 → `peak` journeys/s** in steps (default 120) | manual | no: finds the breaking point |
 | `soak.js` | **20 VUs** for 30 min (or `DURATION`), memory sampled every 10 s | manual | yes |
 
 Run manually: **Actions → Performance → Run workflow**, pick a profile. Locally: `k6 run perf/load.js`
@@ -29,3 +29,8 @@ scripts treat that as a correct answer (`expectedStatuses(200, 409)`), not an er
 
 ## Results
 See [`results.md`](results.md) for the latest recorded runs and findings.
+
+## Overload behaviour
+Each API worker accepts at most `MAX_IN_FLIGHT` (32) requests at once. Beyond that it answers **503 with
+`Retry-After: 2`** immediately (load shedding), and DB pool exhaustion does the same after 5 s. Under the stress
+profile, a rising error rate *with flat latency* is therefore expected and healthy; rising latency is not.

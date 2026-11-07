@@ -18,7 +18,8 @@ def _make_engine(url: str):
         return create_engine(url, connect_args={"check_same_thread": False}, poolclass=StaticPool)
     if url.startswith("sqlite"):
         return create_engine(url, connect_args={"check_same_thread": False})
-    return create_engine(url, pool_pre_ping=True)
+    return create_engine(url, pool_pre_ping=True, pool_size=config.DB_POOL_SIZE,
+                         max_overflow=config.DB_MAX_OVERFLOW, pool_timeout=config.DB_POOL_TIMEOUT_SECONDS)
 
 
 engine = _make_engine(config.DATABASE_URL)

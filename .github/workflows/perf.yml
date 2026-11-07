@@ -15,6 +15,9 @@ on:
       duration:
         description: "Soak duration (k6 format, e.g. 30m, 2h)"
         default: 30m
+      peak:
+        description: "Stress: top arrival rate in journeys per second"
+        default: "120"
 
 concurrency:
   group: perf-${{ github.ref }}
@@ -30,6 +33,7 @@ jobs:
       # PRs run a shorter hold so reviews aren't slowed down; nightly and manual runs use the full profile
       HOLD: ${{ github.event_name == 'pull_request' && '2m' || '5m' }}
       DURATION: ${{ inputs.duration || '30m' }}
+      PEAK_RATE: ${{ inputs.peak || '120' }}
       ACCESS_TOKEN_MINUTES: "240"    # long enough for a soak (tokens are issued once, in setup)
     steps:
       - uses: actions/checkout@v4
