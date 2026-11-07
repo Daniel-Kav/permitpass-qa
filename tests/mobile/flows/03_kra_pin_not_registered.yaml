@@ -1,0 +1,13 @@
+# KRA says the PIN is not registered (stub PIN A999999999Z): clear message, nothing created
+appId: ke.permitpass.citizen
+name: Unregistered KRA PIN is refused
+---
+- evalScript: ${output.name = 'Ghost Traders ' + Date.now().toString(36)}
+- runFlow: ../subflows/login.yaml
+- runFlow:
+    file: ../subflows/create_application.yaml
+    env:
+      PIN: "A999999999Z"
+- assertVisible: "KRA PIN is not registered"
+- assertNotVisible:
+    id: "app-${output.name}"

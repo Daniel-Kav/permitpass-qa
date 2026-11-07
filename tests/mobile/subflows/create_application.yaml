@@ -1,0 +1,12 @@
+# Create and submit an application named ${output.name} with KRA PIN ${PIN}
+appId: ke.permitpass.citizen
+---
+- tapOn:
+    id: "business-name"
+- inputText: ${output.name}
+- tapOn:
+    id: "kra-pin"
+- inputText: ${PIN}
+- hideKeyboard
+- tapOn:
+    id: "create"

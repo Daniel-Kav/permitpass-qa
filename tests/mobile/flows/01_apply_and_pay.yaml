@@ -1,0 +1,34 @@
+# Citizen applies, submits and pays by M-Pesa; the (stubbed) callback marks it paid. Traceability: US-29
+appId: ke.permitpass.citizen
+name: Apply and pay by M-Pesa
+tags: [smoke]
+---
+- evalScript: ${output.name = 'Mobile Duka ' + Date.now().toString(36)}
+- runFlow: ../subflows/login.yaml
+- runFlow:
+    file: ../subflows/create_application.yaml
+    env:
+      PIN: "A123456789Z"
+- assertVisible: "Application for ${output.name} created as a draft."
+- scrollUntilVisible:
+    element:
+      id: "submit-${output.name}"
+- tapOn:
+    id: "submit-${output.name}"
+- scrollUntilVisible:
+    element:
+      id: "pay-${output.name}"
+- tapOn:
+    id: "pay-${output.name}"
+- tapOn:
+    id: "phone-${output.name}"
+- inputText: "0712345678"
+- hideKeyboard
+- tapOn:
+    id: "send-${output.name}"
+- extendedWaitUntil:
+    visible: "Payment received for ${output.name}."
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "Status: Paid"

@@ -1,0 +1,98 @@
+name: Mobile
+
+on:
+  pull_request:
+    paths: ["app/mobile/**", "tests/mobile/**", ".github/workflows/mobile.yml"]
+  push:
+    branches: [main]
+    paths: ["app/mobile/**", "tests/mobile/**"]
+  schedule:
+    - cron: "41 1 * * *"          # nightly, 04:41 Nairobi
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  component-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: app/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/mobile/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npx tsc --noEmit
+      - run: npx jest --ci
+
+  android-maestro:
+    name: android (Maestro)
+    runs-on: ubuntu-latest
+    needs: component-tests
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build the release APK (JS bundled; talks to the host's API at 10.0.2.2)
+        working-directory: app/mobile
+        env:
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:8000
+        run: |
+          npm ci --no-audit --no-fund
+          npx expo prebuild --platform android --no-install
+          cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon
+          ls -la app/build/outputs/apk/release/
+      - name: Start stack (API + PostgreSQL + WireMock)
+        run: |
+          docker compose up -d --build
+          ./scripts/wait-for.sh http://localhost:8000/health 90
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Maestro flows on an Android 12 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 31
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            adb install app/mobile/android/app/build/outputs/apk/release/app-release.apk
+            maestro test tests/mobile/flows --format junit --output maestro-report.xml --debug-output maestro-debug
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: maestro-results
+          path: |
+            maestro-report.xml
+            maestro-debug
+      - name: API logs on failure
+        if: failure()
+        run: docker compose logs api | tail -100
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v

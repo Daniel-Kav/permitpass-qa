@@ -1,0 +1,21 @@
+# Anyone can check a permit without logging in; a made-up certificate is reported as not valid
+appId: ke.permitpass.citizen
+name: Forged permit is caught
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "nav-verify"
+- tapOn:
+    id: "cert-number"
+- inputText: "PP-2026-00000000"
+- tapOn:
+    id: "cert-code"
+- inputText: "forged-code"
+- hideKeyboard
+- tapOn:
+    id: "verify"
+- extendedWaitUntil:
+    visible: "Not a valid PermitPass certificate"
+    timeout: 10000
+- assertNotVisible: ".*Business:.*"
