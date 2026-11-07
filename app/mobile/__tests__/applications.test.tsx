@@ -2,8 +2,9 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import React from 'react';
 import { ApplicationsScreen } from '../src/screens/ApplicationsScreen';
 import { installFakeApi } from '../test-utils/fakeApi';
+import { freshOutbox } from '../test-utils/memoryStorage';
 
-const renderScreen = (onVerify = jest.fn()) => render(<ApplicationsScreen token="tok" onVerify={onVerify} />);
+const renderScreen = (onVerify = jest.fn()) => render(<ApplicationsScreen token="tok" owner="citizen@permitpass.test" onVerify={onVerify} outbox={freshOutbox()} />);
 
 test('lists applications with a readable status', async () => {
   installFakeApi([{ business_name: 'Kibanda Coffee House', state: 'issued' }, { business_name: 'Thika Tyres', state: 'payment_pending' }]);
@@ -22,7 +23,7 @@ test('creating an application upper-cases the PIN', async () => {
   fireEvent.changeText(screen.getByLabelText('KRA PIN'), 'a123456789z');
   fireEvent.press(screen.getByRole('button', { name: 'Create application' }));
   expect(await screen.findByText('Application for Mama Mboga created as a draft.')).toBeOnTheScreen();
-  expect(api.calls.find((c) => c.method === 'POST')!.body).toEqual({ business_name: 'Mama Mboga', kra_pin: 'A123456789Z' });
+  expect(api.created()[0].body).toEqual({ business_name: 'Mama Mboga', kra_pin: 'A123456789Z' });
   expect(screen.getByLabelText('Status: Draft')).toBeOnTheScreen();
 });
 
