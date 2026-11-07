@@ -2,6 +2,21 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [0.4.0] - 2026-11-07: Resilience and mobile
+
+### Added
+- **Mobile app** (Expo / React Native): log in, apply, pay by M-Pesa with live status, verify permits; accessible labels and targets (#40, #45)
+- **Mobile testing**: 20 component tests (Jest + RNTL) and 5 **Maestro** flows on an Android 12 emulator in CI against the full stack (#45)
+- **Payments without a callback**: STK Push Query after 2 min, expiry after 10 min, late successes still pay, double payments flagged `refund_due`; background sweeper with `SKIP LOCKED`; admin endpoints (#30, #41)
+- **Capacity**: pre-start step, 4 workers, sized DB pool with fast 503s, **load shedding**; stress `peak` input (#36, #42)
+
+### Fixed
+- Stale list responses could overwrite the officer queue after the move to multiple workers; found by E2E (#43, #44)
+- Citizen page fetched the list twice on every poll (#44)
+
+### Performance
+- Stress: **3.7× throughput** (44 → 164 req/s); worst-case latency under overload **60 s → 1.1 s** (#42, `docs/perf/results.md`)
+
 ## [0.3.0] - 2026-11-06: Integrations, data and non-functional
 
 ### Added

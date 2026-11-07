@@ -4,9 +4,9 @@ A hands-on QA portfolio built around **PermitPass**, a small permit-application 
 KRA PIN validation, M-Pesa payment, officer approval, signed certificates). The app is deliberately small; the
 **test system around it** is the point.
 
-**v0.3.0 at a glance:** 289 API tests (SQLite *and* PostgreSQL) · 27 contract tests against WireMock ·
-25 browser tests × 4 browsers · axe on every page · OWASP ZAP on every PR · k6 load / stress / soak ·
-legacy migration with SQL reconciliation · **6 defects found by the test system and fixed test-first**.
+**v0.4.0 at a glance:** 320 API tests (SQLite *and* PostgreSQL) · 35 contract tests against WireMock ·
+27 browser tests × 4 browsers · **mobile app with 20 component tests and 5 Maestro flows on an Android emulator** ·
+axe, OWASP ZAP and k6 (load / stress / soak) in CI · **5 defects and 2 resilience gaps found by the test system, all fixed test-first**.
 
 [![CI](https://github.com/Daniel-Kav/permitpass-qa/actions/workflows/ci.yml/badge.svg)](https://github.com/Daniel-Kav/permitpass-qa/actions/workflows/ci.yml)
 
@@ -116,13 +116,13 @@ docs/              strategy, traceability, defects, UAT
 | [#43](https://github.com/Daniel-Kav/permitpass-qa/issues/43) stale list response overwrites the officer queue | E2E after the 4-worker change | [#44](https://github.com/Daniel-Kav/permitpass-qa/pull/44) |
 | [#30](https://github.com/Daniel-Kav/permitpass-qa/issues/30) payments with no callback stay pending | building M-Pesa | [#41](https://github.com/Daniel-Kav/permitpass-qa/pull/41) |
 
-Each fix starts with a commit that reproduces the defect as a failing test.
+Each fix starts with a commit that reproduces the defect as a failing test. Capacity work (#36) took throughput from 44 to 164 req/s and worst-case latency under overload from 60 s to 1.1 s.
 
 ## How this repo is run
 
 Every change is an issue, a short-lived branch, a pull request with a testing checklist, and a merge once CI is green.
 Browse the [merged pull requests](https://github.com/Daniel-Kav/permitpass-qa/pulls?q=is%3Apr+is%3Amerged) and the
-[v0.2.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/1?closed=1) and [v0.3.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/2?closed=1) milestones to see the history.
+[v0.2.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/1?closed=1), [v0.3.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/2?closed=1) and [v0.4.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/3?closed=1) milestones to see the history.
 
 ```
 main ─●────●─────────●──────────●───────────●──────────────●──────────●──── v0.2.0
