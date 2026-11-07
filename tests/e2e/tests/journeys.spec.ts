@@ -184,3 +184,40 @@ test.describe('without JavaScript', () => {
     expect(page.url()).not.toContain('PermitPass');
   });
 });
+
+test('officer queue always shows the list for the selected filter, even if responses arrive out of order (#43)', async ({ page, api }) => {
+  const paid = await api.application(['submit', 'pay']);
+  const approved = await api.application(['submit', 'pay', 'approve']);
+  await new LoginPage(page).loginAs('officer');
+  const officer = new OfficerPage(page);
+  await expect(officer.row(paid.name)).toBeVisible();
+
+  // Hold the next "paid" list response for 1.5 s, so it arrives AFTER the "approved" one
+  let held = false;
+  await page.route(/\/applications\?state=paid/, async (route) => {
+    if (!held) { held = true; await new Promise((r) => setTimeout(r, 1500)); }
+    await route.continue();
+  });
+  await officer.act('Approve', paid.name);           // triggers a refresh of the paid list (held)
+  await officer.filter('Approved, ready to issue');  // user moves on before it returns
+  await page.waitForTimeout(2000);                   // the stale paid response has now arrived
+
+  await expect(page.getByLabel('Status')).toHaveValue('approved');
+  await expect(officer.row(approved.name)).toBeVisible();
+  await expect(officer.row(approved.name).getByRole('button', { name: `Issue permit ${approved.name}` })).toBeVisible();
+});
+
+test('while a payment is pending, the citizen page polls with one request per refresh', async ({ page, api }) => {
+  const app = await api.application(['submit']);
+  await new LoginPage(page).loginAs('citizen');
+  const citizen = new CitizenPage(page);
+  const lists: number[] = [];
+  page.on('request', (r) => { if (/\/applications\?limit=100$/.test(r.url())) lists.push(Date.now()); });
+  await citizen.pay(app.name, '0700000000');            // never answers, so the page keeps polling
+  await expect(citizen.row(app.name).locator('.badge')).toHaveText('payment_pending');
+  const before = lists.length;
+  await page.waitForTimeout(4500);                      // about two polling intervals
+  const polled = lists.length - before;
+  expect(polled).toBeGreaterThanOrEqual(2);
+  expect(polled).toBeLessThanOrEqual(3);                // was double before the fix
+});

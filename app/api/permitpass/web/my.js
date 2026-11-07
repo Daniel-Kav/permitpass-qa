@@ -3,11 +3,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!PP.requireRole('citizen')) return;
   const rows = document.getElementById('rows'), status = document.getElementById('status');
 
-  let load = async function () {
+  // One request per refresh, and only the most recent refresh may render (#43)
+  let latest = 0;
+  async function load() {
+    const ticket = ++latest;
     const page = await PP.api('/applications?limit=100');
+    if (ticket !== latest) return;
     if (!page.items.length) { rows.innerHTML = '<tr><td colspan="5" class="muted">No applications yet.</td></tr>'; return; }
     const certs = await Promise.all(page.items.map((a) => a.state === 'issued' || a.state === 'revoked'
       ? PP.api(`/applications/${a.id}/certificate`).catch(() => null) : null));
+    if (ticket !== latest) return;
     rows.innerHTML = page.items.map((a, i) => `
       <tr data-id="${a.id}">
         <th scope="row">${PP.esc(a.business_name)}</th>
@@ -16,7 +21,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         <td>${PP.fmtDate(a.created_at)}</td>
         <td>${next(a, certs[i])}</td>
       </tr>`).join('');
-  };
+    watch(page.items);
+    announce(page.items);
+  }
 
   function next(a, cert) {
     const name = PP.esc(a.business_name);
@@ -40,8 +47,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (pending && !poll) poll = setInterval(() => load().catch(() => {}), 2000);
     if (!pending && poll) { clearInterval(poll); poll = null; }
   }
-  const _load = load;
-  load = async () => { const page = await PP.api('/applications?limit=100'); await _load(); watch(page.items); announce(page.items); };
 
   // Tell screen-reader users (via the live region) when a payment they started finishes
   const waiting = new Map();
