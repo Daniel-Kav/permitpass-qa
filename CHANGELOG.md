@@ -2,6 +2,13 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [0.5.0] - 2026-11-08: Offline-first mobile
+
+### Added
+- **Idempotency-Key** on `POST /applications` and lifecycle actions: retries replay the first answer; per-user keys; a different request with the same key gets 422; concurrent duplicates get 409; outages release the key; 24 h expiry (#47, #49)
+- **Mobile offline outbox**: apply without signal, sync automatically and **exactly once** when back online; refusals shown with reasons; per-citizen isolation (#48, #50)
+- Tests: 21 API idempotency tests plus a PostgreSQL concurrency test; 20 new mobile tests including *"request arrived, reply lost"*; a Maestro **airplane-mode** flow on the Android emulator
+
 ## [0.4.0] - 2026-11-07: Resilience and mobile
 
 ### Added

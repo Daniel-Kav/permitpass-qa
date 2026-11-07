@@ -4,9 +4,9 @@ A hands-on QA portfolio built around **PermitPass**, a small permit-application 
 KRA PIN validation, M-Pesa payment, officer approval, signed certificates). The app is deliberately small; the
 **test system around it** is the point.
 
-**v0.4.0 at a glance:** 320 API tests (SQLite *and* PostgreSQL) · 35 contract tests against WireMock ·
-27 browser tests × 4 browsers · **mobile app with 20 component tests and 5 Maestro flows on an Android emulator** ·
-axe, OWASP ZAP and k6 (load / stress / soak) in CI · **5 defects and 2 resilience gaps found by the test system, all fixed test-first**.
+**v0.5.0 at a glance:** 342 API tests (SQLite *and* PostgreSQL) · 35 contract tests against WireMock ·
+27 browser tests × 4 browsers · **offline-first mobile app with 40 component tests and 6 Maestro flows (incl. airplane mode)
+on an Android emulator** · axe, OWASP ZAP and k6 in CI · **5 defects and 2 resilience gaps found by the test system, all fixed test-first**.
 
 [![CI](https://github.com/Daniel-Kav/permitpass-qa/actions/workflows/ci.yml/badge.svg)](https://github.com/Daniel-Kav/permitpass-qa/actions/workflows/ci.yml)
 
@@ -130,7 +130,7 @@ Each fix starts with a commit that reproduces the defect as a failing test. Capa
 
 Every change is an issue, a short-lived branch, a pull request with a testing checklist, and a merge once CI is green.
 Browse the [merged pull requests](https://github.com/Daniel-Kav/permitpass-qa/pulls?q=is%3Apr+is%3Amerged) and the
-[v0.2.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/1?closed=1), [v0.3.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/2?closed=1) and [v0.4.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/3?closed=1) milestones to see the history.
+[v0.2.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/1?closed=1), [v0.3.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/2?closed=1), [v0.4.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/3?closed=1) and [v0.5.0](https://github.com/Daniel-Kav/permitpass-qa/milestone/4?closed=1) milestones to see the history.
 
 ```
 main ─●────●─────────●──────────●───────────●──────────────●──────────●──── v0.2.0

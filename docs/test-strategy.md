@@ -1,6 +1,6 @@
 # PermitPass test strategy
 
-> Status: live, as of v0.4.0.
+> Status: live, as of v0.5.0.
 
 ## Scope
 Permit lifecycle, payments (M-Pesa), KRA PIN validation (SOAP), signed certificates and QR verification,
@@ -49,6 +49,12 @@ The mobile app uses the same API and the same test-data rules as the portal. Com
 Testing Library) cover behaviour and accessibility labels against an in-memory fake API that serialises like a real
 network. Maestro flows run the **release build** on an emulator, so bundling, cleartext config and real HTTP
 (including M-Pesa webhooks) are all exercised.
+
+## Offline and retries
+Every write can carry an `Idempotency-Key`; the API guarantees at-most-once execution per key and replays the first
+answer. The mobile outbox reuses one key per application for its whole life. That is what makes offline sync
+*exactly once*. Tests deliberately lose a response after the server has done the work, and check there is still a
+single application.
 
 ## Resilience
 Under overload the API sheds load (`503 Retry-After`) rather than queueing; payments without a callback are queried
