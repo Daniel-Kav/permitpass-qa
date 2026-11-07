@@ -112,7 +112,8 @@ docs/              strategy, traceability, defects, UAT
 | [#25](https://github.com/Daniel-Kav/permitpass-qa/issues/25) **password in the URL** without JS | OWASP ZAP | [#27](https://github.com/Daniel-Kav/permitpass-qa/pull/27) |
 | [#26](https://github.com/Daniel-Kav/permitpass-qa/issues/26) missing security headers / CSP | OWASP ZAP | [#28](https://github.com/Daniel-Kav/permitpass-qa/pull/28) |
 | [#34](https://github.com/Daniel-Kav/permitpass-qa/issues/34) **race: duplicate approvals, 500s** | k6 load test | [#35](https://github.com/Daniel-Kav/permitpass-qa/pull/35) |
-| [#36](https://github.com/Daniel-Kav/permitpass-qa/issues/36) single worker saturates at ~44 req/s | k6 stress test | open (v0.4.0) |
+| [#36](https://github.com/Daniel-Kav/permitpass-qa/issues/36) single worker saturates at ~44 req/s, 60 s tail | k6 stress test | [#42](https://github.com/Daniel-Kav/permitpass-qa/pull/42): 3.7× throughput, max 1.1 s under overload |
+| [#43](https://github.com/Daniel-Kav/permitpass-qa/issues/43) stale list response overwrites the officer queue | E2E after the 4-worker change | [#44](https://github.com/Daniel-Kav/permitpass-qa/pull/44) |
 | [#30](https://github.com/Daniel-Kav/permitpass-qa/issues/30) payments with no callback stay pending | building M-Pesa | [#41](https://github.com/Daniel-Kav/permitpass-qa/pull/41) |
 
 Each fix starts with a commit that reproduces the defect as a failing test.

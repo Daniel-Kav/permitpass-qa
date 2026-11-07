@@ -63,3 +63,23 @@ in the summary. Added `p95 < 200 ms` to match the load profile.
 
 ## How to reproduce
 **Actions → Performance → Run workflow** → choose the profile. Load also runs nightly.
+
+## v0.4.0: capacity after #42 (4 workers, sized pool, load shedding)
+
+Same runner type and same `stress.js`. Before = v0.3.0, one worker.
+
+| Stress run | Throughput | Failed | p95 read / write | p99 | max | VUs needed |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Before**, to 120/s | plateau ≈ 44 req/s | 2.53% (60 s timeouts) | 357 / 365 ms | **60 s** | 60 s | 400 (maxed) |
+| **After**, to 120/s | 68.5 req/s, still rising with load | **0.00%** | 9 / 14 ms | 15–44 ms | 192 ms | 62 |
+| **After**, to 300/s | **164 req/s** (3.7×) | 10.58% shed as fast 503s | 524 / 629 ms | **663–809 ms** | **1.1 s** | 260 |
+
+**What changed in behaviour:** before, overload meant *queueing*: a few users waited a minute while others were
+served instantly. Now a worker that already has 32 requests in flight answers `503 Retry-After: 2` at once, so
+everyone else stays fast and nobody waits a minute. At 120 journeys/s (4× the old knee) there is no degradation
+at all; the new knee lies between 120 and 300 journeys/s.
+
+#36 acceptance: knee ≥ 2× ✅ (> 4×) · p99 under overload < 5 s ✅ (≤ 0.8 s, max 1.1 s).
+
+The 4-worker change also exposed a client-side race (stale list responses rendering last), caught by E2E and fixed
+in #44 (#43).
