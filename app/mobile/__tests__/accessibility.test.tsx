@@ -6,6 +6,7 @@ import App from '../App';
 import { ApplicationsScreen } from '../src/screens/ApplicationsScreen';
 import { VerifyScreen } from '../src/screens/VerifyScreen';
 import { installFakeApi } from '../test-utils/fakeApi';
+import { freshOutbox } from '../test-utils/memoryStorage';
 
 function unlabelled(root: ReactTestInstance): string[] {
   const problems: string[] = [];
@@ -26,7 +27,7 @@ test('login screen', () => {
 test('applications screen in every state, with the pay form open', async () => {
   installFakeApi(['draft', 'submitted', 'payment_pending', 'paid', 'approved', 'issued', 'rejected', 'revoked']
     .map((state, i) => ({ business_name: `Duka ${i}`, state: state as any, rejection_reason: state === 'rejected' ? 'x' : null })));
-  render(<ApplicationsScreen token="tok" onVerify={jest.fn()} />);
+  render(<ApplicationsScreen token="tok" owner="citizen@permitpass.test" onVerify={jest.fn()} outbox={freshOutbox()} />);
   fireEvent.press(await screen.findByRole('button', { name: 'Pay KES 2500 for Duka 1' }));
   expect(unlabelled(screen.root)).toEqual([]);
 });

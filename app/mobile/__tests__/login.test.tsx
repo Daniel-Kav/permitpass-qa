@@ -14,7 +14,7 @@ test('a citizen logs in', async () => {
   const onLoggedIn = jest.fn();
   render(<LoginScreen onLoggedIn={onLoggedIn} />);
   logIn('citizen@permitpass.test', 'PermitPass!2026');
-  await waitFor(() => expect(onLoggedIn).toHaveBeenCalledWith('tok'));
+  await waitFor(() => expect(onLoggedIn).toHaveBeenCalledWith('tok', 'citizen@permitpass.test'));
 });
 
 test('a wrong password shows the generic message', async () => {

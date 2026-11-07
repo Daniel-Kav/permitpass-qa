@@ -1,0 +1,25 @@
+# No signal: the application is saved on the phone, then sent by itself when the connection returns (#48)
+appId: ke.permitpass.citizen
+name: Apply offline, sync when back online
+---
+- evalScript: ${output.name = 'Offline Duka ' + Date.now().toString(36)}
+- runFlow: ../subflows/login.yaml
+- setAirplaneMode: enabled
+- runFlow:
+    file: ../subflows/create_application.yaml
+    env:
+      PIN: "A123456789Z"
+- extendedWaitUntil:
+    visible: "No connection. ${output.name} is saved on this phone.*"
+    timeout: 15000
+- assertVisible: "Saved on this phone"
+- assertVisible:
+    id: "outbox-${output.name}"
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    visible: "Sent 1 saved application."
+    timeout: 60000
+- assertNotVisible: "Saved on this phone"
+- scrollUntilVisible:
+    element:
+      id: "submit-${output.name}"

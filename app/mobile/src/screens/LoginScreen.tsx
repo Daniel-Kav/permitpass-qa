@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import { api } from '../api';
 import { Button, Field, Message, colors } from '../ui';
 
-export function LoginScreen({ onLoggedIn }: { onLoggedIn: (token: string) => void }) {
+export function LoginScreen({ onLoggedIn }: { onLoggedIn: (token: string, email: string) => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,7 +15,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: (token: string) => voi
     try {
       const r = await api.login(email, password);
       if (r.role !== 'citizen') setError('This app is for business owners. Officers use the web portal.');
-      else onLoggedIn(r.access_token);
+      else onLoggedIn(r.access_token, email.trim().toLowerCase());
     } catch (e: any) {
       setError(e.message);
     } finally {

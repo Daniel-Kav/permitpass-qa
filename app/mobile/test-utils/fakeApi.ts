@@ -9,8 +9,10 @@ export function installFakeApi(initial: Partial<Application>[] = []) {
     id: `id-${i}`, business_name: `Duka ${i}`, kra_pin: 'A123456789Z', state: 'draft', fee_kes: 2500,
     created_at: '2026-11-07T09:00:00+00:00', rejection_reason: null, payment_note: null, ...a,
   }));
-  const calls: { method: string; path: string; body: any }[] = [];
+  const calls: { method: string; path: string; body: any; key?: string }[] = [];
   let override: Handler | null = null;
+  const replays = new Map<string, [number, any]>();          // Idempotency-Key -> first answer (#47)
+  const net = { offline: false, loseNextResponse: false };
 
   const route = (method: string, path: string, body: any, headers: Record<string, string>): [number, any] => {
     const o = override?.(method, path, body, headers);
@@ -45,11 +47,23 @@ export function installFakeApi(initial: Partial<Application>[] = []) {
   };
 
   global.fetch = jest.fn(async (url: any, init: any = {}) => {
+    if (net.offline) throw new TypeError('Network request failed');
     const path = String(url).replace(/^https?:\/\/[^/]+/, '');
     const body = init.body ? JSON.parse(init.body) : undefined;
     const method = init.method ?? 'GET';
-    calls.push({ method, path, body });
-    const [status, data] = route(method, path, body, init.headers ?? {});
+    const headers = init.headers ?? {};
+    const key = headers['Idempotency-Key'];
+    calls.push({ method, path, body, key });
+    let answer = key ? replays.get(key) : undefined;
+    if (!answer) {
+      answer = route(method, path, body, headers);
+      if (key && answer[0] < 500) replays.set(key, answer);
+    }
+    const [status, data] = answer;
+    if (net.loseNextResponse) {                                // the server did the work; the phone never hears back
+      net.loseNextResponse = false;
+      throw new TypeError('Network request failed');
+    }
     // Serialise like a real network would, so the screen never shares objects with the 'server'
     const wire = data === undefined ? undefined : JSON.parse(JSON.stringify(data));
     return { ok: status < 400, status, json: async () => wire } as Response;
@@ -57,6 +71,8 @@ export function installFakeApi(initial: Partial<Application>[] = []) {
 
   return {
     calls,
+    net,
+    created: () => calls.filter((c) => c.method === 'POST' && c.path === '/applications'),
     apps: () => apps,
     set(id: string, patch: Partial<Application>) { Object.assign(apps.find((a) => a.id === id)!, patch); },
     override(h: Handler | null) { override = h; },
