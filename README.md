@@ -72,6 +72,14 @@ TOKEN=$(curl -s localhost:8000/auth/login -H 'Content-Type: application/json' \
 curl -s localhost:8000/auth/me -H "Authorization: Bearer $TOKEN"
 ```
 
+## Safe retries
+
+`POST /applications` and `POST /applications/{id}/{action}` accept an **`Idempotency-Key`** header (8-64 chars,
+e.g. a UUID). A retry with the same key (same user, same request) gets the first answer replayed with
+`Idempotent-Replayed: true`. Nothing runs twice, so a retried **pay** never sends a second M-Pesa prompt. A key
+reused for a different request returns 422; temporary failures (503) release the key so the retry really runs. Keys
+expire after 24 h. The mobile app's offline outbox relies on this.
+
 ## Permit lifecycle
 
 ```

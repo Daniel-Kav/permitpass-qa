@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import TimeoutError as SQLAlchemyTimeoutError
@@ -31,6 +31,7 @@ from .integrations.kra import KraClient, KraUnavailable, PinStatus
 from .db import SessionLocal, get_db, init_db, reset_db  # noqa: F401  (reset_db re-exported for tests)
 from .domain import ACTION_ROLES, PERMIT_FEE_KES, REASON_REQUIRED, TRANSITIONS, Role, State
 from .models import ApplicationRow, AuditEventRow, CertificateRow, PaymentRow, UserRow
+from .idempotency import run_once
 from .load_shedding import LoadSheddingMiddleware
 from .security_headers import SecurityHeadersMiddleware
 from .schemas import ActionIn, Application, ApplicationIn, ApplicationPage, AuditEvent, Certificate, Payment
@@ -92,7 +93,17 @@ def create_application(
     user: UserRow = Depends(current_user),
     db: Session = Depends(get_db),
     kra: KraClient = Depends(get_kra_client),
-) -> ApplicationRow:
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
+):
+    return run_once(idempotency_key, user.id, "POST /applications", body.model_dump(),
+                    lambda: _serialise(_create_application(body, user, db, kra)), success_status=201)
+
+
+def _serialise(row: ApplicationRow) -> dict:
+    return Application.model_validate(row).model_dump(mode="json")
+
+
+def _create_application(body: ApplicationIn, user: UserRow, db: Session, kra: KraClient) -> ApplicationRow:
     if user.role != Role.citizen:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Only citizens can apply")
     try:
@@ -154,7 +165,14 @@ def act(
     user: UserRow = Depends(current_user),
     db: Session = Depends(get_db),
     mpesa: MpesaClient = Depends(get_mpesa_client),
-) -> ApplicationRow:
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
+):
+    payload = body.model_dump() if body else None
+    return run_once(idempotency_key, user.id, f"POST /applications/{app_id}/{action}", payload,
+                    lambda: _serialise(_act(app_id, action, body, user, db, mpesa)))
+
+
+def _act(app_id: str, action: str, body: ActionIn | None, user: UserRow, db: Session, mpesa: MpesaClient) -> ApplicationRow:
     if action not in ACTION_ROLES:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown action")
     row = _get_visible(db, app_id, user, lock=True)   # held until commit: the next request sees the new state
