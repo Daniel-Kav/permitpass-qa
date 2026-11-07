@@ -82,3 +82,31 @@ def test_concurrent_sweeps_process_each_payment_once(client, monkeypatch):
     for app_id in ids:
         events = [e["action"] for e in client.get(f"/applications/{app_id}/history", headers=OFFICER).json()]
         assert events.count("payment_failed") == 1
+
+
+def test_concurrent_requests_with_one_idempotency_key_create_one_application(client):
+    """Four copies of one create, same key, at the same instant: exactly one runs (#47)."""
+    import uuid as _uuid
+
+    from conftest import CITIZEN, VALID_APPLICATION
+
+    for _ in range(ROUNDS):
+        k = str(_uuid.uuid4())
+        barrier, results = threading.Barrier(PARALLEL), []
+
+        def worker():
+            c = TestClient(app, raise_server_exceptions=False)
+            barrier.wait()
+            r = c.post("/applications", json=VALID_APPLICATION, headers={**CITIZEN, "Idempotency-Key": k})
+            results.append((r.status_code, r.json().get("id")))
+
+        threads = [threading.Thread(target=worker) for _ in range(PARALLEL)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        codes = sorted(c for c, _ in results)
+        assert set(codes) <= {201, 409}, codes             # 201 (ran or replayed) or 409 (in progress, retry)
+        assert len({i for c, i in results if c == 201}) == 1, results
+    total = client.get("/applications", headers=CITIZEN).json()["total"]
+    assert total == ROUNDS
