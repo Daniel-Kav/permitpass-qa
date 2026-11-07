@@ -9,9 +9,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const NEEDS_REASON = new Set(['reject', 'revoke']);
   const LABEL = { approve: 'Approve', reject: 'Reject', issue: 'Issue permit', revoke: 'Revoke' };
 
+  // Only the most recent load may render: an older response that arrives late is dropped (#43)
+  let latest = 0;
   async function load() {
+    const ticket = ++latest;
     const q = stateSel.value ? `?state=${stateSel.value}&limit=100` : '?limit=100';
     const page = await PP.api(`/applications${q}`);
+    if (ticket !== latest) return;
     count.textContent = `${page.total} application${page.total === 1 ? '' : 's'}`;
     rows.innerHTML = page.items.map((a) => `
       <tr data-id="${a.id}" data-name="${PP.esc(a.business_name)}">
