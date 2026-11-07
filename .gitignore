@@ -11,3 +11,7 @@ reports/junit-*.xml
 .DS_Store
 permitpass.db
 tests/e2e/node_modules/
+app/mobile/node_modules/
+app/mobile/android/
+app/mobile/ios/
+app/mobile/.expo/
