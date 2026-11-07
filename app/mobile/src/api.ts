@@ -28,9 +28,10 @@ function errorText(body: any, status: number): string {
   return `Request failed (${status})`;
 }
 
-export async function request<T>(path: string, opts: { method?: string; body?: unknown; token?: string } = {}): Promise<T> {
+export async function request<T>(path: string, opts: { method?: string; body?: unknown; token?: string; idempotencyKey?: string } = {}): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
+  if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, { method: opts.method ?? 'GET', headers, body: opts.body === undefined ? undefined : JSON.stringify(opts.body) });
@@ -46,12 +47,16 @@ export const api = {
   login: (email: string, password: string) =>
     request<{ access_token: string; role: string }>('/auth/login', { method: 'POST', body: { email: email.trim(), password } }),
   list: (token: string) => request<{ items: Application[] }>('/applications?limit=100', { token }).then((p) => p.items),
-  create: (token: string, business_name: string, kra_pin: string) =>
-    request<Application>('/applications', { method: 'POST', token, body: { business_name, kra_pin } }),
+  create: (token: string, business_name: string, kra_pin: string, idempotencyKey?: string) =>
+    request<Application>('/applications', { method: 'POST', token, body: { business_name, kra_pin }, idempotencyKey }),
   submit: (token: string, id: string) => request<Application>(`/applications/${id}/submit`, { method: 'POST', token }),
-  pay: (token: string, id: string, phone: string) =>
-    request<Application>(`/applications/${id}/pay`, { method: 'POST', token, body: { phone: phone.replace(/\s+/g, '') } }),
+  pay: (token: string, id: string, phone: string, idempotencyKey?: string) =>
+    request<Application>(`/applications/${id}/pay`, { method: 'POST', token, body: { phone: phone.replace(/\s+/g, '') }, idempotencyKey }),
   certificate: (token: string, id: string) => request<Certificate>(`/applications/${id}/certificate`, { token }),
   verify: (number: string, sig: string) =>
     request<Verdict>(`/verify/${encodeURIComponent(number.trim())}?sig=${encodeURIComponent(sig.trim())}`),
 };
+
+/** Network down, server busy or unsure: worth retrying later with the same Idempotency-Key. */
+export const isRetryable = (e: unknown) =>
+  e instanceof ApiError && (e.status === 0 || e.status === 401 || e.status === 409 || e.status >= 500);

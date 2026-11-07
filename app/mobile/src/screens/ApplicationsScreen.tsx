@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Application, api } from '../api';
+import NetInfo from '@react-native-community/netinfo';
+import { Application, ApiError, api, isRetryable } from '../api';
+import { Outbox, OutboxItem, SendResult } from '../outbox';
+import { newKey as defaultNewKey, outbox as defaultOutbox } from '../outboxInstance';
 import { Button, Field, Message, colors } from '../ui';
 
 const STATE_TEXT: Record<string, string> = {
@@ -8,7 +11,9 @@ const STATE_TEXT: Record<string, string> = {
   approved: 'Approved', issued: 'Issued', rejected: 'Rejected', revoked: 'Revoked',
 };
 
-export function ApplicationsScreen({ token, onVerify }: { token: string; onVerify: (n: string, sig: string) => void }) {
+export function ApplicationsScreen({ token, owner, onVerify, outbox = defaultOutbox, newKey = defaultNewKey }: {
+  token: string; owner: string; onVerify: (n: string, sig: string) => void; outbox?: Outbox; newKey?: () => string;
+}) {
   const [apps, setApps] = useState<Application[]>([]);
   const [name, setName] = useState('');
   const [pin, setPin] = useState('');
@@ -16,6 +21,7 @@ export function ApplicationsScreen({ token, onVerify }: { token: string; onVerif
   const [refreshing, setRefreshing] = useState(false);
   const latest = useRef(0);           // only the newest response may render (same rule as the portal, #43)
   const waiting = useRef(new Set<string>());
+  const [saved, setSaved] = useState<OutboxItem[]>([]);
 
   const load = useCallback(async () => {
     const ticket = ++latest.current;
@@ -32,6 +38,41 @@ export function ApplicationsScreen({ token, onVerify }: { token: string; onVerif
   }, [token]);
 
   useEffect(() => { load().catch((e) => setMsg({ text: e.message, kind: 'error' })); }, [load]);
+
+  // ---------- offline outbox (#48) ----------
+  const send = useCallback(async (item: OutboxItem): Promise<SendResult> => {
+    try {
+      await api.create(token, item.business_name, item.kra_pin, item.key);
+      return { kind: 'sent' };
+    } catch (e) {
+      if (isRetryable(e)) return { kind: 'retry' };
+      return { kind: 'refused', reason: e instanceof ApiError ? e.message : String(e) };
+    }
+  }, [token]);
+
+  const flush = useCallback(async () => {
+    const { sent, refused } = await outbox.flush(owner, send);
+    if (sent.length) {
+      setMsg({ text: `Sent ${sent.length} saved application${sent.length === 1 ? '' : 's'}.`, kind: 'success' });
+      await load().catch(() => {});
+    } else if (refused.length) {
+      setMsg({ text: `${refused[0].business_name} could not be sent: ${refused[0].error}`, kind: 'error' });
+    }
+  }, [outbox, owner, send, load]);
+
+  useEffect(() => {
+    const off = outbox.subscribe(() => setSaved(outbox.list(owner)));
+    outbox.load().then(() => { setSaved(outbox.list(owner)); flush(); });
+    const offNet = NetInfo.addEventListener((s) => { if (s.isConnected) flush(); });   // back online
+    return () => { off(); offNet(); };
+  }, [outbox, owner, flush]);
+
+  const queued = saved.some((i) => i.status === 'queued');
+  useEffect(() => {
+    if (!queued) return;
+    const t = setInterval(() => { flush(); }, 15000);                                    // and keep trying
+    return () => clearInterval(t);
+  }, [queued, flush]);
 
   // Poll every 2 s while any payment is waiting for M-Pesa
   const pending = apps.some((a) => a.state === 'payment_pending');
@@ -53,8 +94,22 @@ export function ApplicationsScreen({ token, onVerify }: { token: string; onVerif
 
   async function create() {
     const n = name.trim();
-    await run(async () => { await api.create(token, n, pin.trim().toUpperCase()); setName(''); setPin(''); },
-      `Application for ${n} created as a draft.`);
+    const p = pin.trim().toUpperCase();
+    const key = newKey();          // one key for this application, online or later from the outbox
+    try {
+      await api.create(token, n, p, key);
+      setName(''); setPin('');
+      setMsg({ text: `Application for ${n} created as a draft.`, kind: 'success' });
+      await load();
+    } catch (e) {
+      if (e instanceof ApiError && (e.status === 0 || e.status >= 500)) {
+        await outbox.add(owner, n, p, key);
+        setName(''); setPin('');
+        setMsg({ text: `No connection. ${n} is saved on this phone and will be sent automatically when you're back online.`, kind: 'success' });
+      } else {
+        setMsg({ text: (e as Error).message, kind: 'error' });
+      }
+    }
   }
 
   return (
@@ -68,11 +123,28 @@ export function ApplicationsScreen({ token, onVerify }: { token: string; onVerif
           hint="A or P, 9 digits, then a letter, e.g. A123456789Z" />
         <Button title="Create application" testID="create" onPress={create} />
       </View>
+      {saved.length > 0 && (
+        <View style={st.card} testID="outbox">
+          <Text accessibilityRole="header" style={st.h2}>Saved on this phone</Text>
+          {saved.map((i) => (
+            <View key={i.key} testID={`outbox-${i.business_name}`} style={{ marginBottom: 10 }}>
+              <Text style={st.name}>{i.business_name}</Text>
+              {i.status === 'queued'
+                ? <Text style={st.note}>Waiting for a connection. It will be sent automatically.</Text>
+                : <>
+                    <Text style={[st.note, { color: colors.danger }]}>Not sent: {i.error}</Text>
+                    <Button title="Remove" kind="secondary" label={`Remove ${i.business_name}`} testID={`remove-${i.business_name}`}
+                      onPress={() => outbox.remove(i.key)} />
+                  </>}
+            </View>
+          ))}
+        </View>
+      )}
       {apps.length === 0 ? <Text style={st.muted}>No applications yet.</Text> : null}
       {apps.map((a) => (
         <AppCard key={a.id} a={a} token={token} onVerify={onVerify}
           onSubmit={() => run(() => api.submit(token, a.id), `${a.business_name} submitted.`)}
-          onPay={(phone) => run(async () => { await api.pay(token, a.id, phone); waiting.current.add(a.id); },
+          onPay={(phone) => run(async () => { await api.pay(token, a.id, phone, newKey()); waiting.current.add(a.id); },
             `Payment request sent to ${phone}. Approve it on your phone.`)} />
       ))}
     </ScrollView>

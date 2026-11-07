@@ -9,7 +9,8 @@ import { Button, colors } from './src/ui';
 type Screen = { name: 'apps' } | { name: 'verify'; initial?: { number: string; sig: string } };
 
 export default function App() {
-  const [token, setToken] = useState<string | null>(null);
+  const [session, setSession] = useState<{ token: string; email: string } | null>(null);
+  const token = session?.token ?? null;
   const [screen, setScreen] = useState<Screen>({ name: 'apps' });
 
   return (
@@ -20,16 +21,16 @@ export default function App() {
         {screen.name === 'verify' ? (
           <VerifyScreen initial={screen.initial} />
         ) : token ? (
-          <ApplicationsScreen token={token} onVerify={(number, sig) => setScreen({ name: 'verify', initial: { number, sig } })} />
+          <ApplicationsScreen token={token} owner={session!.email} onVerify={(number, sig) => setScreen({ name: 'verify', initial: { number, sig } })} />
         ) : (
-          <LoginScreen onLoggedIn={setToken} />
+          <LoginScreen onLoggedIn={(t, email) => setSession({ token: t, email })} />
         )}
       </View>
       <View style={styles.nav}>
         {screen.name === 'verify'
           ? <Button title={token ? 'My applications' : 'Back to log in'} kind="secondary" testID="nav-apps" onPress={() => setScreen({ name: 'apps' })} />
           : <Button title="Verify a permit" kind="secondary" testID="nav-verify" onPress={() => setScreen({ name: 'verify' })} />}
-        {token ? <Button title="Log out" kind="secondary" testID="logout" onPress={() => { setToken(null); setScreen({ name: 'apps' }); }} /> : null}
+        {token ? <Button title="Log out" kind="secondary" testID="logout" onPress={() => { setSession(null); setScreen({ name: 'apps' }); }} /> : null}
       </View>
     </SafeAreaView>
   );
