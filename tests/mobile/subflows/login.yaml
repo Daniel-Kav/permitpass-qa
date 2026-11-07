@@ -1,0 +1,17 @@
+# Log in as the seeded citizen (see README "Demo users")
+appId: ke.permitpass.citizen
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "email"
+- inputText: "citizen@permitpass.test"
+- tapOn:
+    id: "password"
+- inputText: "PermitPass!2026"
+- hideKeyboard
+- tapOn:
+    id: "login"
+- extendedWaitUntil:
+    visible: "My applications"
+    timeout: 15000

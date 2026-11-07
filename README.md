@@ -45,7 +45,7 @@ make perf-smoke      # k6 (needs k6 installed)
 | Service virtualisation: KRA SOAP, M-Pesa Daraja with callback webhooks | `mocks/` | Done |
 | Contract tests: real clients vs stubs, zero unmatched requests, fakes == stubs | `tests/contract/` | Done |
 | Web E2E (Page Object Model), cross-browser, accessibility (axe, WCAG 2.1 AA) | `tests/e2e/` | Done |
-| Mobile (Expo + Maestro, offline sync) | `app/mobile/`, `tests/mobile/` | v0.3.0 |
+| Mobile: Expo app, component tests (Jest + RNTL), Maestro flows on an Android emulator | `app/mobile/`, [`tests/mobile/`](tests/mobile/README.md) | Done |
 | Performance: smoke gate, load / stress / soak with service levels | `perf/`, [`docs/perf/`](docs/perf/README.md) | Done: found #34 and #36 |
 | Security: auth/token attacks, IDOR, tamper tests | `tests/api/` | Done |
 | Security (OWASP ZAP baseline) | CI | v0.3.0 |
@@ -91,12 +91,12 @@ draft --submit--> submitted --pay--> payment_pending --(M-Pesa callback)--> paid
 
 ```
 app/api/           FastAPI service under test
-app/mobile/        Expo app (week 5)
+app/mobile/        Expo citizen app (same API as the portal)
 tests/api/         pytest: lifecycle, RBAC, validation
 tests/contract/    consumer/provider contracts
 tests/e2e/         Playwright + axe (pages/ = page objects, fixtures.ts = API data setup)
 app/api/permitpass/web/  portal pages (plain HTML/JS, served by FastAPI)
-tests/mobile/      Maestro flows
+tests/mobile/      Maestro flows run on an Android 12 emulator in CI
 mocks/             WireMock stubs + test-data rules (see mocks/README.md)
 perf/              k6 scripts
 data-migration/    legacy CSV fixture with known answers (importer + SQL in app/api/permitpass/migration/)
